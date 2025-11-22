@@ -18,13 +18,13 @@
         title: 'Loop FurEver™',
         subtitle: 'Voor huisdieren',
         url: 'https://loop-biotech.com/nl/product/furever/',
-        image: 'https://loop-biotech.com/wp-content/uploads/2024/03/Loop-FurEver-Calm-Closed-Front.jpg'
+        image: 'https://loop-biotech.com/wp-content/uploads/2025/09/Ontwerp-zonder-titel-15-1024x791.png'
       },
       earthrise: {
         title: 'Loop EarthRise™',
         subtitle: 'Voor mensen',
         url: 'https://loop-biotech.com/nl/product/earthrise/',
-        image: 'https://loop-biotech.com/wp-content/uploads/2024/03/Loop-EarthRise-Calm-Closed-Front.jpg'
+        image: 'https://loop-biotech.com/wp-content/uploads/2025/03/loop_earthrise-1024x687.webp'
       }
     }
   };
