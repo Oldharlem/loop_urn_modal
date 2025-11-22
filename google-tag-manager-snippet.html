@@ -1,0 +1,324 @@
+<script>
+/**
+ * Loop Biotech - URN Selection Popup (Google Tag Manager Version)
+ *
+ * INSTALLATION:
+ * 1. Copy this entire file content
+ * 2. Go to Google Tag Manager > Tags > New
+ * 3. Choose "Custom HTML" as tag type
+ * 4. Paste this code
+ * 5. Set trigger to fire on specific product pages (Furever/EarthRise)
+ * 6. Save and publish
+ */
+
+(function() {
+  'use strict';
+
+  // Configuration
+  var CONFIG = {
+    storageKey: 'loop_urn_selection_shown',
+    mobileMaxWidth: 768,
+    products: {
+      furever: {
+        title: 'Loop FurEver™',
+        url: 'https://loop-biotech.com/nl/product/furever/',
+        image: 'https://loop-biotech.com/wp-content/uploads/2025/09/Ontwerp-zonder-titel-15-1024x791.png'
+      },
+      earthrise: {
+        title: 'Loop EarthRise™',
+        url: 'https://loop-biotech.com/nl/product/earthrise/',
+        image: 'https://loop-biotech.com/wp-content/uploads/2025/03/loop_earthrise-1024x687.webp'
+      }
+    }
+  };
+
+  // Check if popup should be shown
+  function shouldShowPopup() {
+    // Check if already shown
+    if (localStorage.getItem(CONFIG.storageKey)) {
+      return false;
+    }
+
+    // Check if mobile device
+    if (window.innerWidth > CONFIG.mobileMaxWidth) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // Create and inject styles
+  function injectStyles() {
+    var styles = '\n\
+      .loop-urn-modal-overlay {\n\
+        position: fixed;\n\
+        top: 0;\n\
+        left: 0;\n\
+        right: 0;\n\
+        bottom: 0;\n\
+        background: rgba(0, 0, 0, 0.5);\n\
+        z-index: 9999;\n\
+        display: flex;\n\
+        align-items: center;\n\
+        justify-content: center;\n\
+        padding: 20px;\n\
+        opacity: 0;\n\
+        transition: opacity 0.3s ease;\n\
+      }\n\
+\n\
+      .loop-urn-modal-overlay.visible {\n\
+        opacity: 1;\n\
+      }\n\
+\n\
+      .loop-urn-modal {\n\
+        background: white;\n\
+        border-radius: 8px;\n\
+        padding: 30px 20px;\n\
+        max-width: 400px;\n\
+        width: 100%;\n\
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);\n\
+        animation: slideUp 0.3s ease;\n\
+      }\n\
+\n\
+      @keyframes slideUp {\n\
+        from {\n\
+          transform: translateY(30px);\n\
+          opacity: 0;\n\
+        }\n\
+        to {\n\
+          transform: translateY(0);\n\
+          opacity: 1;\n\
+        }\n\
+      }\n\
+\n\
+      .loop-urn-modal-title {\n\
+        font-family: \'Montserrat\', -apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif;\n\
+        font-size: 20px;\n\
+        font-weight: 600;\n\
+        color: #000;\n\
+        text-align: center;\n\
+        margin: 0 0 25px 0;\n\
+        line-height: 1.4;\n\
+      }\n\
+\n\
+      .loop-urn-modal-products {\n\
+        display: grid;\n\
+        grid-template-columns: 1fr 1fr;\n\
+        gap: 15px;\n\
+        margin-bottom: 15px;\n\
+      }\n\
+\n\
+      .loop-urn-product-card {\n\
+        display: flex;\n\
+        flex-direction: column;\n\
+        align-items: center;\n\
+        text-decoration: none;\n\
+        padding: 15px;\n\
+        border: 2px solid #e5e5e5;\n\
+        border-radius: 8px;\n\
+        transition: all 0.2s ease;\n\
+        cursor: pointer;\n\
+        background: white;\n\
+      }\n\
+\n\
+      .loop-urn-product-card:hover,\n\
+      .loop-urn-product-card:active {\n\
+        border-color: #000;\n\
+        transform: translateY(-2px);\n\
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);\n\
+      }\n\
+\n\
+      .loop-urn-product-image {\n\
+        width: 100%;\n\
+        aspect-ratio: 1;\n\
+        object-fit: cover;\n\
+        border-radius: 4px;\n\
+        margin-bottom: 12px;\n\
+      }\n\
+\n\
+      .loop-urn-product-title {\n\
+        font-family: \'Montserrat\', -apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif;\n\
+        font-size: 14px;\n\
+        font-weight: 600;\n\
+        color: #000;\n\
+        text-align: center;\n\
+        margin: 0;\n\
+        line-height: 1.3;\n\
+      }\n\
+\n\
+      .loop-urn-modal-close {\n\
+        display: block;\n\
+        width: 100%;\n\
+        padding: 12px;\n\
+        margin-top: 10px;\n\
+        background: transparent;\n\
+        border: 1px solid #ddd;\n\
+        border-radius: 6px;\n\
+        font-family: \'Montserrat\', -apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif;\n\
+        font-size: 14px;\n\
+        color: #666;\n\
+        cursor: pointer;\n\
+        transition: all 0.2s ease;\n\
+      }\n\
+\n\
+      .loop-urn-modal-close:hover,\n\
+      .loop-urn-modal-close:active {\n\
+        background: #f5f5f5;\n\
+        border-color: #999;\n\
+        color: #000;\n\
+      }\n\
+\n\
+      @media (max-width: 360px) {\n\
+        .loop-urn-modal {\n\
+          padding: 25px 15px;\n\
+        }\n\
+\n\
+        .loop-urn-modal-title {\n\
+          font-size: 18px;\n\
+        }\n\
+\n\
+        .loop-urn-product-title {\n\
+          font-size: 13px;\n\
+        }\n\
+      }\n\
+    ';
+
+    var styleEl = document.createElement('style');
+    styleEl.textContent = styles;
+    document.head.appendChild(styleEl);
+  }
+
+  // Create modal HTML
+  function createModal() {
+    var overlay = document.createElement('div');
+    overlay.className = 'loop-urn-modal-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'loop-urn-modal-title');
+
+    overlay.innerHTML = '\n\
+      <div class="loop-urn-modal">\n\
+        <h2 id="loop-urn-modal-title" class="loop-urn-modal-title">\n\
+          In welke urn bent u geïnteresseerd?\n\
+        </h2>\n\
+        <div class="loop-urn-modal-products">\n\
+          <a href="' + CONFIG.products.furever.url + '" class="loop-urn-product-card" data-product="furever">\n\
+            <img\n\
+              src="' + CONFIG.products.furever.image + '"\n\
+              alt="' + CONFIG.products.furever.title + '"\n\
+              class="loop-urn-product-image"\n\
+              loading="eager"\n\
+            />\n\
+            <div class="loop-urn-product-title">' + CONFIG.products.furever.title + '</div>\n\
+          </a>\n\
+          <a href="' + CONFIG.products.earthrise.url + '" class="loop-urn-product-card" data-product="earthrise">\n\
+            <img\n\
+              src="' + CONFIG.products.earthrise.image + '"\n\
+              alt="' + CONFIG.products.earthrise.title + '"\n\
+              class="loop-urn-product-image"\n\
+              loading="eager"\n\
+            />\n\
+            <div class="loop-urn-product-title">' + CONFIG.products.earthrise.title + '</div>\n\
+          </a>\n\
+        </div>\n\
+        <button type="button" class="loop-urn-modal-close">\n\
+          Sluiten\n\
+        </button>\n\
+      </div>\n\
+    ';
+
+    return overlay;
+  }
+
+  // Show modal
+  function showModal() {
+    var modal = createModal();
+    document.body.appendChild(modal);
+
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+
+    // Animate in
+    setTimeout(function() {
+      modal.classList.add('visible');
+    }, 10);
+
+    // Handle product selection
+    var productCards = modal.querySelectorAll('.loop-urn-product-card');
+    for (var i = 0; i < productCards.length; i++) {
+      productCards[i].addEventListener('click', function() {
+        markAsShown();
+        // Let the link navigate naturally
+      });
+    }
+
+    // Handle close button
+    var closeBtn = modal.querySelector('.loop-urn-modal-close');
+    closeBtn.addEventListener('click', function() {
+      closeModal(modal);
+    });
+
+    // Handle overlay click (outside modal)
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeModal(modal);
+      }
+    });
+
+    // Handle escape key
+    var handleEscape = function(e) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        closeModal(modal);
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+  }
+
+  // Close modal
+  function closeModal(modal) {
+    modal.classList.remove('visible');
+    document.body.style.overflow = '';
+
+    setTimeout(function() {
+      if (modal && modal.parentNode) {
+        modal.parentNode.removeChild(modal);
+      }
+    }, 300);
+
+    markAsShown();
+  }
+
+  // Mark as shown in localStorage
+  function markAsShown() {
+    try {
+      localStorage.setItem(CONFIG.storageKey, 'true');
+    } catch (e) {
+      // Handle localStorage errors silently
+      console.log('Could not save to localStorage:', e);
+    }
+  }
+
+  // Initialize
+  function init() {
+    if (!shouldShowPopup()) {
+      return;
+    }
+
+    injectStyles();
+
+    // Show modal after a brief delay to ensure page is loaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(showModal, 500);
+      });
+    } else {
+      setTimeout(showModal, 500);
+    }
+  }
+
+  // Start the script
+  init();
+
+})();
+</script>

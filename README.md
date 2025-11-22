@@ -8,6 +8,7 @@ A minimalistic, mobile-only popup that helps users choose between the Furever (p
 - **One-time display**: Uses localStorage to ensure the popup is shown only once per user
 - **Minimalistic design**: Matches the Loop Biotech website aesthetic with clean, simple styling
 - **Standalone**: No dependencies, works independently
+- **Google Tag Manager ready**: Includes dedicated GTM-compatible snippet for easy deployment
 - **Responsive**: Adapts to different mobile screen sizes
 - **Accessible**: Includes ARIA labels and keyboard support (ESC to close)
 
@@ -45,13 +46,22 @@ function loop_enqueue_urn_popup() {
 add_action('wp_enqueue_scripts', 'loop_enqueue_urn_popup');
 ```
 
-### Option 3: Google Tag Manager
+### Option 3: Google Tag Manager (Recommended for Easy Updates)
 
-1. Go to your Google Tag Manager workspace
-2. Create a new Tag → Custom HTML
-3. Paste the contents of `urn-selection-popup.js` wrapped in `<script>` tags
-4. Set the trigger to fire on specific product pages
-5. Publish the container
+**Use the dedicated GTM file: `google-tag-manager-snippet.html`**
+
+1. Open the file `google-tag-manager-snippet.html`
+2. Copy the **entire contents** of the file
+3. Go to your Google Tag Manager workspace
+4. Create a new Tag → Custom HTML
+5. Paste the copied code directly into the HTML field
+6. Set the trigger to fire on specific product pages:
+   - Trigger Type: Page View
+   - Trigger Fires On: Some Page Views
+   - Page URL contains: `/product/furever/` OR `/product/earthrise/`
+7. Save and publish the container
+
+**Note:** The GTM snippet uses ES5 JavaScript for maximum compatibility.
 
 ## Configuration
 
