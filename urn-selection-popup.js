@@ -232,7 +232,7 @@
 
     overlay.innerHTML = `
       <div class="loop-urn-modal">
-        <h2 id="loop-urn-modal-title" class="loop-urn-modal-title">
+        <h2 id="loop-urn-modal-title" class="loop-urn-modal-title" style="color: #000 !important;">
           In welke urn bent u geïnteresseerd?
         </h2>
         <div class="loop-urn-modal-products">
