@@ -16,11 +16,13 @@
     products: {
       furever: {
         title: 'Loop FurEver™',
+        subtitle: 'Voor huisdieren',
         url: 'https://loop-biotech.com/nl/product/furever/',
         image: 'https://loop-biotech.com/wp-content/uploads/2025/09/Ontwerp-zonder-titel-15-1024x791.png'
       },
       earthrise: {
         title: 'Loop EarthRise™',
+        subtitle: 'Voor mensen',
         url: 'https://loop-biotech.com/nl/product/earthrise/',
         image: 'https://loop-biotech.com/wp-content/uploads/2025/03/loop_earthrise-1024x687.webp'
       }
@@ -244,6 +246,7 @@
               loading="eager"
             />
             <div class="loop-urn-product-title">${CONFIG.products.furever.title}</div>
+            <div class="loop-urn-product-subtitle">${CONFIG.products.furever.subtitle}</div>
           </a>
           <a href="${CONFIG.products.earthrise.url}" class="loop-urn-product-card" data-product="earthrise">
             <img
@@ -253,6 +256,7 @@
               loading="eager"
             />
             <div class="loop-urn-product-title">${CONFIG.products.earthrise.title}</div>
+            <div class="loop-urn-product-subtitle">${CONFIG.products.earthrise.subtitle}</div>
           </a>
         </div>
         <button type="button" class="loop-urn-modal-close">
