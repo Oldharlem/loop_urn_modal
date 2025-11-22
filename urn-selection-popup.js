@@ -172,6 +172,32 @@
         color: #000;
       }
 
+      .loop-urn-modal-close.loading {
+        color: transparent;
+        position: relative;
+        pointer-events: none;
+        border-color: #999;
+      }
+
+      .loop-urn-loader {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #666;
+        border-radius: 50%;
+        animation: loop-urn-spin 0.8s linear infinite;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      @keyframes loop-urn-spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+      }
+
       @media (max-width: 360px) {
         .loop-urn-modal {
           padding: 25px 15px;
@@ -253,16 +279,24 @@
 
     // Handle product selection
     const productCards = modal.querySelectorAll('.loop-urn-product-card');
+    const closeBtn = modal.querySelector('.loop-urn-modal-close');
+
     productCards.forEach(card => {
       card.addEventListener('click', (e) => {
         const product = card.dataset.product;
+
+        // Show loader in close button
+        closeBtn.classList.add('loading');
+        const loader = document.createElement('span');
+        loader.className = 'loop-urn-loader';
+        closeBtn.appendChild(loader);
+
         markAsShown();
         // Let the link navigate naturally
       });
     });
 
     // Handle close button
-    const closeBtn = modal.querySelector('.loop-urn-modal-close');
     closeBtn.addEventListener('click', () => {
       closeModal(modal);
     });

@@ -168,6 +168,32 @@
         color: #000;\n\
       }\n\
 \n\
+      .loop-urn-modal-close.loading {\n\
+        color: transparent;\n\
+        position: relative;\n\
+        pointer-events: none;\n\
+        border-color: #999;\n\
+      }\n\
+\n\
+      .loop-urn-loader {\n\
+        display: inline-block;\n\
+        width: 16px;\n\
+        height: 16px;\n\
+        border: 2px solid #f3f3f3;\n\
+        border-top: 2px solid #666;\n\
+        border-radius: 50%;\n\
+        animation: loop-urn-spin 0.8s linear infinite;\n\
+        position: absolute;\n\
+        left: 50%;\n\
+        top: 50%;\n\
+        transform: translate(-50%, -50%);\n\
+      }\n\
+\n\
+      @keyframes loop-urn-spin {\n\
+        0% { transform: translate(-50%, -50%) rotate(0deg); }\n\
+        100% { transform: translate(-50%, -50%) rotate(360deg); }\n\
+      }\n\
+\n\
       @media (max-width: 360px) {\n\
         .loop-urn-modal {\n\
           padding: 25px 15px;\n\
@@ -245,15 +271,22 @@
 
     // Handle product selection
     var productCards = modal.querySelectorAll('.loop-urn-product-card');
+    var closeBtn = modal.querySelector('.loop-urn-modal-close');
+
     for (var i = 0; i < productCards.length; i++) {
       productCards[i].addEventListener('click', function() {
+        // Show loader in close button
+        closeBtn.classList.add('loading');
+        var loader = document.createElement('span');
+        loader.className = 'loop-urn-loader';
+        closeBtn.appendChild(loader);
+
         markAsShown();
         // Let the link navigate naturally
       });
     }
 
     // Handle close button
-    var closeBtn = modal.querySelector('.loop-urn-modal-close');
     closeBtn.addEventListener('click', function() {
       closeModal(modal);
     });
