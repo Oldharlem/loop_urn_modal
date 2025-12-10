@@ -3,7 +3,7 @@
  * Plugin Name: Loop Magic Popup Creator
  * Plugin URI: https://github.com/Oldharlem/loop_urn_modal
  * Description: Create unlimited mobile popups with custom products and page targeting. Perfect for product selection, promotions, and more.
- * Version: 2.0.8
+ * Version: 2.0.9
  * Author: Loop Biotech
  * Author URI: https://loop-biotech.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LPS_VERSION', '2.0.8');
+define('LPS_VERSION', '2.0.9');
 define('LPS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -188,13 +188,16 @@ class Loop_Product_Selector {
      * Simple: URL must END WITH the rule string
      * Wildcard (*) also supported for pattern matching
      */
-    private function matches_page_rules($rules) {
+    private function matches_page_rules($rules, &$debug_match_info = null) {
+        $debug_match_info = array();
+
         // If no rules, show on all pages
         if (empty(trim($rules))) {
             return true;
         }
 
         $current_url = $_SERVER['REQUEST_URI'];
+        $debug_match_info['full_url_being_matched'] = $current_url;
 
         $rules_array = array_filter(array_map('trim', explode("\n", $rules)));
 
@@ -204,6 +207,12 @@ class Loop_Product_Selector {
             if (empty($rule)) {
                 continue;
             }
+
+            $debug_match_info['rules_checked'][] = array(
+                'rule' => $rule,
+                'url_ending' => substr($current_url, -strlen($rule)),
+                'would_match' => substr($current_url, -strlen($rule)) === $rule
+            );
 
             // Wildcard match
             if (strpos($rule, '*') !== false) {
@@ -274,8 +283,10 @@ class Loop_Product_Selector {
             }
 
             // Check page targeting rules
-            if (!$this->matches_page_rules($popup['page_rules'])) {
+            $match_debug = null;
+            if (!$this->matches_page_rules($popup['page_rules'], $match_debug)) {
                 $check['skip_reason'] = 'page_rules_no_match';
+                $check['match_debug'] = $match_debug;
                 $debug_info['popup_checks'][] = $check;
                 continue;
             }
