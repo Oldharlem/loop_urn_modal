@@ -3,7 +3,7 @@
  * Plugin Name: Loop Magic Popup Creator
  * Plugin URI: https://github.com/Oldharlem/loop_urn_modal
  * Description: Create unlimited mobile popups with custom products and page targeting. Perfect for product selection, promotions, and more.
- * Version: 2.0.9
+ * Version: 2.1.0
  * Author: Loop Biotech
  * Author URI: https://loop-biotech.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LPS_VERSION', '2.0.9');
+define('LPS_VERSION', '2.1.0');
 define('LPS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -185,49 +185,25 @@ class Loop_Product_Selector {
     /**
      * Check if current page matches targeting rules
      *
-     * Simple: URL must END WITH the rule string
-     * Wildcard (*) also supported for pattern matching
+     * Simple: If URL CONTAINS the rule string, it matches
      */
     private function matches_page_rules($rules, &$debug_match_info = null) {
-        $debug_match_info = array();
-
         // If no rules, show on all pages
         if (empty(trim($rules))) {
             return true;
         }
 
         $current_url = $_SERVER['REQUEST_URI'];
-        $debug_match_info['full_url_being_matched'] = $current_url;
-
         $rules_array = array_filter(array_map('trim', explode("\n", $rules)));
 
         foreach ($rules_array as $rule) {
             $rule = trim($rule);
-
             if (empty($rule)) {
                 continue;
             }
 
-            $debug_match_info['rules_checked'][] = array(
-                'rule' => $rule,
-                'url_ending' => substr($current_url, -strlen($rule)),
-                'would_match' => substr($current_url, -strlen($rule)) === $rule
-            );
-
-            // Wildcard match
-            if (strpos($rule, '*') !== false) {
-                $pattern = preg_quote($rule, '/');
-                $pattern = str_replace('\\*', '.*', $pattern);
-                $pattern = '/' . $pattern . '/i';
-
-                if (preg_match($pattern, $current_url)) {
-                    return true;
-                }
-                continue;
-            }
-
-            // Simple: URL ends with rule
-            if (substr($current_url, -strlen($rule)) === $rule) {
+            // Simple: URL contains rule string
+            if (strpos($current_url, $rule) !== false) {
                 return true;
             }
         }
