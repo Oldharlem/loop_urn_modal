@@ -179,6 +179,17 @@
     font-size: 18px;
     width: 18px;
     height: 18px;
+    vertical-align: middle;
+}
+
+/* General button icon alignment */
+.lps-admin-wrap .button {
+    display: inline-flex;
+    align-items: center;
+}
+
+.lps-admin-wrap .button .dashicons {
+    vertical-align: middle;
 }
 
 /* Preview Container */
@@ -224,161 +235,6 @@
 
 .lps-admin-wrap .form-table td {
     padding-right: 0;
-}
-
-/* ========================================
-   FEATURE 1: LIVE PREVIEW SIDEBAR
-   ======================================== */
-
-.lps-edit-layout {
-    display: flex;
-    gap: 30px;
-    margin-top: 20px;
-}
-
-.lps-edit-main {
-    flex: 1;
-    min-width: 0;
-}
-
-.lps-preview-sidebar {
-    width: 400px;
-    position: sticky;
-    top: 32px;
-    align-self: flex-start;
-    background: #f6f7f7;
-    border: 1px solid #c3c4c7;
-    border-radius: 4px;
-    padding: 20px;
-    max-height: calc(100vh - 64px);
-    overflow-y: auto;
-}
-
-.lps-preview-sidebar h3 {
-    margin: 0 0 15px 0;
-    font-size: 14px;
-    text-transform: uppercase;
-    color: #646970;
-    font-weight: 600;
-}
-
-.lps-preview-phone {
-    background: #fff;
-    border-radius: 20px;
-    padding: 40px 10px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    position: relative;
-}
-
-.lps-preview-phone::before {
-    content: '';
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 4px;
-    background: #ddd;
-    border-radius: 2px;
-}
-
-.lps-preview-content {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    min-height: 300px;
-}
-
-.lps-preview-title {
-    font-size: 16px;
-    font-weight: 600;
-    text-align: center;
-    margin: 0 0 20px 0;
-    color: #000;
-}
-
-.lps-preview-products {
-    display: grid;
-    gap: 12px;
-    margin-bottom: 15px;
-}
-
-.lps-preview-products.cols-1 {
-    grid-template-columns: 1fr;
-}
-
-.lps-preview-products.cols-2 {
-    grid-template-columns: 1fr 1fr;
-}
-
-.lps-preview-products.cols-3 {
-    grid-template-columns: repeat(3, 1fr);
-}
-
-.lps-preview-product {
-    border: 2px solid #e5e5e5;
-    border-radius: 8px;
-    padding: 12px;
-    text-align: center;
-    background: white;
-    transition: all 0.2s;
-}
-
-.lps-preview-product:hover {
-    border-color: #000;
-    transform: translateY(-2px);
-}
-
-.lps-preview-product-image {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    background: #f0f0f0;
-}
-
-.lps-preview-product-title {
-    font-size: 12px;
-    font-weight: 600;
-    margin: 0 0 4px 0;
-}
-
-.lps-preview-product-subtitle {
-    font-size: 10px;
-    color: #666;
-    margin: 0;
-}
-
-.lps-preview-close {
-    width: 100%;
-    padding: 10px;
-    background: transparent;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 12px;
-    color: #666;
-    cursor: pointer;
-}
-
-.lps-preview-empty {
-    text-align: center;
-    color: #999;
-    padding: 40px 20px;
-}
-
-/* Responsive - Hide sidebar on small screens */
-@media (max-width: 1280px) {
-    .lps-edit-layout {
-        flex-direction: column;
-    }
-
-    .lps-preview-sidebar {
-        width: 100%;
-        position: relative;
-        top: 0;
-        max-height: none;
-    }
 }
 
 /* ========================================
@@ -523,46 +379,6 @@
    FEATURE 5: ENHANCED LIST VIEW
    ======================================== */
 
-.lps-list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.lps-list-filters {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.lps-search-box {
-    position: relative;
-}
-
-.lps-search-box input {
-    padding-left: 35px;
-    width: 250px;
-}
-
-.lps-search-box .dashicons {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #999;
-}
-
-.lps-filter-status {
-    padding: 6px 12px;
-    border: 1px solid #c3c4c7;
-    border-radius: 4px;
-    background: white;
-    cursor: pointer;
-}
-
 .lps-status-badge {
     display: inline-flex;
     align-items: center;
@@ -594,6 +410,13 @@
     font-size: 12px;
     height: auto;
     line-height: 1.4;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.lps-table-actions .button .dashicons {
+    vertical-align: middle;
 }
 
 .lps-empty-state {

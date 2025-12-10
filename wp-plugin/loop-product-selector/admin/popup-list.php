@@ -86,20 +86,6 @@ if (isset($_GET['action']) && isset($_GET['popup_id']) && check_admin_referer('l
         </div>
     </div>
 
-    <!-- List Header with Search and Filters -->
-    <div class="lps-list-header">
-        <div class="lps-list-filters">
-            <div class="lps-search-box">
-                <span class="dashicons dashicons-search"></span>
-                <input type="text" id="lps-search" placeholder="<?php _e('Search popups...', 'loop-product-selector'); ?>">
-            </div>
-            <select id="lps-filter-status" class="lps-filter-status">
-                <option value="all"><?php _e('All Statuses', 'loop-product-selector'); ?></option>
-                <option value="enabled"><?php _e('Enabled Only', 'loop-product-selector'); ?></option>
-                <option value="disabled"><?php _e('Disabled Only', 'loop-product-selector'); ?></option>
-            </select>
-        </div>
-    </div>
     <?php endif; ?>
 
     <?php if (empty($popups)): ?>
@@ -123,7 +109,7 @@ if (isset($_GET['action']) && isset($_GET['popup_id']) && check_admin_referer('l
             </thead>
             <tbody>
                 <?php foreach ($popups as $popup_id => $popup): ?>
-                    <tr class="lps-popup-row" data-status="<?php echo $popup['enabled'] ? 'enabled' : 'disabled'; ?>" data-search-terms="<?php echo esc_attr(strtolower($popup['name'] . ' ' . $popup['title'])); ?>">
+                    <tr class="lps-popup-row">
                         <td>
                             <?php if ($popup['enabled']): ?>
                                 <span class="lps-status-badge enabled">
@@ -196,45 +182,5 @@ if (isset($_GET['action']) && isset($_GET['popup_id']) && check_admin_referer('l
                 <?php endforeach; ?>
             </tbody>
         </table>
-
-        <script>
-        jQuery(document).ready(function($) {
-            // Search functionality
-            $('#lps-search').on('input', function() {
-                const searchTerm = $(this).val().toLowerCase();
-                filterTable();
-            });
-
-            // Status filter
-            $('#lps-filter-status').on('change', function() {
-                filterTable();
-            });
-
-            function filterTable() {
-                const searchTerm = $('#lps-search').val().toLowerCase();
-                const statusFilter = $('#lps-filter-status').val();
-
-                $('.lps-popup-row').each(function() {
-                    const $row = $(this);
-                    const searchTerms = $row.data('search-terms');
-                    const status = $row.data('status');
-
-                    let showRow = true;
-
-                    // Apply search filter
-                    if (searchTerm && searchTerms.indexOf(searchTerm) === -1) {
-                        showRow = false;
-                    }
-
-                    // Apply status filter
-                    if (statusFilter !== 'all' && status !== statusFilter) {
-                        showRow = false;
-                    }
-
-                    $row.toggle(showRow);
-                });
-            }
-        });
-        </script>
     <?php endif; ?>
 </div>

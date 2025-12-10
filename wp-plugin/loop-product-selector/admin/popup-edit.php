@@ -31,7 +31,6 @@ if ($is_edit) {
         'name' => '',
         'enabled' => true,
         'title' => 'Which product are you interested in?',
-        'mobile_max_width' => 768,
         'show_on_desktop' => false,
         'redisplay_days' => 0,
         'storage_key' => $popup_id . '_shown',
@@ -63,9 +62,7 @@ $products_json = !empty($popup['products']) ? wp_json_encode($popup['products'])
         <?php _e('Configure your magic popup with custom products and page targeting. Each popup can display different products on different pages.', 'loop-product-selector'); ?>
     </p>
 
-    <div class="lps-edit-layout">
-        <div class="lps-edit-main">
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" id="lps-settings-form">
+    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" id="lps-settings-form">
         <?php wp_nonce_field('lps_popup_edit_action', 'lps_popup_edit_nonce'); ?>
         <input type="hidden" name="action" value="lps_save_popup">
         <input type="hidden" name="popup_id" value="<?php echo esc_attr($popup_id); ?>">
@@ -101,20 +98,6 @@ $products_json = !empty($popup['products']) ? wp_json_encode($popup['products'])
                 </td>
             </tr>
 
-            <!-- Mobile Max Width -->
-            <tr>
-                <th scope="row">
-                    <label for="popup_mobile_max_width"><?php _e('Mobile Max Width (px)', 'loop-product-selector'); ?></label>
-                </th>
-                <td>
-                    <input type="number" id="popup_mobile_max_width" name="popup_mobile_max_width"
-                           value="<?php echo esc_attr($popup['mobile_max_width']); ?>" min="320" max="1024" step="1" class="small-text">
-                    <p class="description">
-                        <?php _e('Magic popup will only show on devices with screen width less than or equal to this value. Default: 768px', 'loop-product-selector'); ?>
-                    </p>
-                </td>
-            </tr>
-
             <!-- Show on Desktop -->
             <tr>
                 <th scope="row">
@@ -126,7 +109,7 @@ $products_json = !empty($popup['products']) ? wp_json_encode($popup['products'])
                         <span class="lps-toggle-slider"></span>
                     </label>
                     <p class="description">
-                        <?php _e('Enable this to show the magic popup on desktop devices as well (ignores mobile width limit).', 'loop-product-selector'); ?>
+                        <?php _e('Enable to show the magic popup on desktop devices. When disabled, popup only shows on mobile devices (screen width ≤ 768px).', 'loop-product-selector'); ?>
                     </p>
                 </td>
             </tr>
@@ -242,25 +225,11 @@ $products_json = !empty($popup['products']) ? wp_json_encode($popup['products'])
         </p>
     </form>
 
-            <!-- Debug Info (remove in production) -->
-            <div style="margin-top: 20px; padding: 10px; background: #f5f5f5; border: 1px solid #ddd; display: none;" id="lps-debug">
-                <strong>Debug Info:</strong><br>
-                Popup ID: <code><?php echo esc_html($popup_id); ?></code><br>
-                Products in form: <code><?php echo esc_html($products_json); ?></code>
-            </div>
-        </div>
-
-        <!-- LIVE PREVIEW SIDEBAR -->
-        <div class="lps-preview-sidebar">
-            <h3><?php _e('📱 Live Preview', 'loop-product-selector'); ?></h3>
-            <div class="lps-preview-phone">
-                <div class="lps-preview-content" id="lps-live-preview-content">
-                    <div class="lps-preview-empty">
-                        <?php _e('Add products to see preview', 'loop-product-selector'); ?>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Debug Info (remove in production) -->
+    <div style="margin-top: 20px; padding: 10px; background: #f5f5f5; border: 1px solid #ddd; display: none;" id="lps-debug">
+        <strong>Debug Info:</strong><br>
+        Popup ID: <code><?php echo esc_html($popup_id); ?></code><br>
+        Products in form: <code><?php echo esc_html($products_json); ?></code>
     </div>
 
     <script>

@@ -216,10 +216,10 @@
     function showPreview() {
         const config = {
             storageKey: 'preview_' + Date.now(),
-            mobileMaxWidth: parseInt($('#lps_mobile_max_width').val()) || 768,
             showOnDesktop: $('#popup_show_on_desktop').is(':checked'),
-            title: $('#lps_title').val() || $('#popup_title').val() || 'Product Selection',
-            products: getProducts()
+            title: $('#popup_title').val() || 'Product Selection',
+            products: getProducts(),
+            redisplayDays: 0
         };
 
         if (config.products.length === 0) {
@@ -241,62 +241,6 @@
         script.src = lpsAdmin.pluginUrl + 'assets/js/popup.js?v=' + Date.now();
         document.body.appendChild(script);
     }
-
-    // ========================================
-    // FEATURE 1: LIVE PREVIEW SIDEBAR
-    // ========================================
-
-    function updateLivePreview() {
-        const title = $('#popup_title').val() || 'Your Title Here';
-        const products = getProducts();
-        const $preview = $('#lps-live-preview-content');
-
-        if (!$preview.length) return;
-
-        if (products.length === 0) {
-            $preview.html('<div class="lps-preview-empty">Add products to see preview</div>');
-            return;
-        }
-
-        // Determine grid columns
-        let colsClass = 'cols-1';
-        if (products.length === 2) colsClass = 'cols-2';
-        else if (products.length >= 3) colsClass = 'cols-3';
-
-        // Generate product cards
-        const productCards = products.map(product => {
-            const subtitle = product.subtitle ?
-                `<p class="lps-preview-product-subtitle">${escapeHtml(product.subtitle)}</p>` : '';
-
-            return `
-                <div class="lps-preview-product">
-                    ${product.image ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}" class="lps-preview-product-image">` : '<div class="lps-preview-product-image"></div>'}
-                    <p class="lps-preview-product-title">${escapeHtml(product.title)}</p>
-                    ${subtitle}
-                </div>
-            `;
-        }).join('');
-
-        const html = `
-            <h2 class="lps-preview-title">${escapeHtml(title)}</h2>
-            <div class="lps-preview-products ${colsClass}">
-                ${productCards}
-            </div>
-            <button class="lps-preview-close">Sluiten</button>
-        `;
-
-        $preview.html(html);
-    }
-
-    // Update preview on any input change
-    $('#lps-settings-form').on('input change', 'input, textarea', function() {
-        updateLivePreview();
-    });
-
-    // Initialize preview after products are loaded
-    setTimeout(() => {
-        updateLivePreview();
-    }, 100);
 
     // ========================================
     // FEATURE 2: DRAG AND DROP PRODUCTS
@@ -358,7 +302,6 @@
 
             updateProductNumbers();
             updateHiddenField();
-            updateLivePreview();
         }
 
         $('.lps-product-item').removeClass('drag-over');

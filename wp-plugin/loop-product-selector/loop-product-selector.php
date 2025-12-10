@@ -238,7 +238,6 @@ class Loop_Product_Selector {
             // This popup should be shown
             $matching_popups[] = array(
                 'storageKey' => $popup['storage_key'],
-                'mobileMaxWidth' => intval($popup['mobile_max_width']),
                 'showOnDesktop' => !empty($popup['show_on_desktop']),
                 'title' => $popup['title'],
                 'products' => $popup['products'],
@@ -277,7 +276,6 @@ class Loop_Product_Selector {
 
         $config = array(
             'storageKey' => 'preview_' . time(),
-            'mobileMaxWidth' => intval($_POST['mobileMaxWidth']),
             'showOnDesktop' => !empty($_POST['showOnDesktop']),
             'title' => sanitize_text_field($_POST['title']),
             'products' => json_decode(stripslashes($_POST['products']), true),
@@ -319,7 +317,6 @@ class Loop_Product_Selector {
         $popup['name'] = sanitize_text_field($_POST['popup_name']);
         $popup['enabled'] = isset($_POST['popup_enabled']);
         $popup['title'] = sanitize_text_field($_POST['popup_title']);
-        $popup['mobile_max_width'] = absint($_POST['popup_mobile_max_width']);
         $popup['show_on_desktop'] = isset($_POST['popup_show_on_desktop']);
         $popup['redisplay_days'] = absint($_POST['popup_redisplay_days']);
         $popup['page_rules'] = sanitize_textarea_field($_POST['popup_page_rules']);
