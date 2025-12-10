@@ -51,8 +51,8 @@ class Loop_Product_Selector {
     public function add_admin_menu() {
         // Main menu page - Popup List
         add_options_page(
-            __('Product Selector Popups', 'loop-product-selector'),
-            __('Product Selector', 'loop-product-selector'),
+            __('Loop Magic Popup Creator', 'loop-product-selector'),
+            __('Magic Popups', 'loop-product-selector'),
             'manage_options',
             'loop-product-selector',
             array($this, 'render_popup_list_page')
@@ -61,8 +61,8 @@ class Loop_Product_Selector {
         // Submenu for Add/Edit (hidden from menu, accessed via links)
         add_submenu_page(
             null, // null parent = hidden from menu
-            __('Edit Popup', 'loop-product-selector'),
-            __('Edit Popup', 'loop-product-selector'),
+            __('Edit Magic Popup', 'loop-product-selector'),
+            __('Edit Magic Popup', 'loop-product-selector'),
             'manage_options',
             'loop-product-selector-edit',
             array($this, 'render_popup_edit_page')

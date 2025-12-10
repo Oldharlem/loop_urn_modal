@@ -49,21 +49,21 @@ if (isset($_GET['action']) && isset($_GET['popup_id']) && check_admin_referer('l
 
 <div class="wrap lps-admin-wrap">
     <h1>
-        <?php _e('Product Selector Popups', 'loop-product-selector'); ?>
+        <?php _e('Loop Magic Popup Creator', 'loop-product-selector'); ?>
         <a href="<?php echo admin_url('admin.php?page=loop-product-selector-edit'); ?>" class="page-title-action">
-            <?php _e('Add New Popup', 'loop-product-selector'); ?>
+            <?php _e('Add New Magic Popup', 'loop-product-selector'); ?>
         </a>
     </h1>
 
     <p class="description">
-        <?php _e('Manage multiple product selector popups. Each popup can have different products and show on different pages.', 'loop-product-selector'); ?>
+        <?php _e('Create and manage unlimited magic popups. Each popup can have different products and show on different pages with custom targeting rules.', 'loop-product-selector'); ?>
     </p>
 
     <?php if (empty($popups)): ?>
         <div class="notice notice-info">
-            <p><?php _e('No popups configured yet.', 'loop-product-selector'); ?>
+            <p><?php _e('No magic popups configured yet.', 'loop-product-selector'); ?>
                <a href="<?php echo admin_url('admin.php?page=loop-product-selector-edit'); ?>">
-                   <?php _e('Create your first popup', 'loop-product-selector'); ?>
+                   <?php _e('Create your first magic popup', 'loop-product-selector'); ?>
                </a>
             </p>
         </div>
