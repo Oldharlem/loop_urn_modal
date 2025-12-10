@@ -3,7 +3,7 @@
  * Plugin Name: Loop Magic Popup Creator
  * Plugin URI: https://github.com/Oldharlem/loop_urn_modal
  * Description: Create unlimited mobile popups with custom products and page targeting. Perfect for product selection, promotions, and more.
- * Version: 2.0.4
+ * Version: 2.0.5
  * Author: Loop Biotech
  * Author URI: https://loop-biotech.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LPS_VERSION', '2.0.4');
+define('LPS_VERSION', '2.0.5');
 define('LPS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -333,10 +333,13 @@ class Loop_Product_Selector {
             );
         }
 
-        // Debug output for admins (visible in page source)
+        // Debug output for admins - use wp_footer to ensure it outputs after Elementor
         if (current_user_can('manage_options')) {
-            echo "\n<!-- Loop Magic Popup Debug v" . LPS_VERSION . " -->\n";
-            echo "<!-- " . esc_html(json_encode($debug_info, JSON_PRETTY_PRINT)) . " -->\n";
+            $debug_json = wp_json_encode($debug_info);
+            add_action('wp_footer', function() use ($debug_json) {
+                echo "<script>console.log('=== Loop Magic Popup Debug v" . LPS_VERSION . " ===');\n";
+                echo "console.log('Debug Info:', " . $debug_json . ");</script>\n";
+            }, 9999);
         }
 
         // Don't load if no matching popups
@@ -356,12 +359,6 @@ class Loop_Product_Selector {
         // Pass all matching popups to JavaScript
         // The frontend script will handle showing them (first matching one)
         wp_localize_script('lps-popup', 'URN_POPUP_CONFIGS', $matching_popups);
-
-        // Debug: Log what we're passing (visible in page source for admins)
-        if (current_user_can('manage_options')) {
-            echo "\n<!-- Loop Magic Popup Debug: Passing " . count($matching_popups) . " popup(s) to JavaScript -->\n";
-            echo "<!-- Config data: " . esc_html(json_encode($matching_popups, JSON_PRETTY_PRINT)) . " -->\n";
-        }
     }
 
     /**
