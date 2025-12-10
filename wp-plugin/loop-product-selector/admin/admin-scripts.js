@@ -221,23 +221,36 @@
     }
 
     function showPreview() {
+        console.log('===== BUILDING PREVIEW CONFIG =====');
+
+        // Read title
+        const titleElement = $('#popup_title');
+        const titleValue = titleElement.val();
+        console.log('PREVIEW: Title element length:', titleElement.length);
+        console.log('PREVIEW: Title value:', titleValue);
+
+        // Read checkbox
         const checkboxElement = $('#popup_show_on_desktop');
-        const isChecked = checkboxElement.is(':checked');
+        const isChecked = checkboxElement.prop('checked');
+        console.log('PREVIEW: Checkbox element length:', checkboxElement.length);
+        console.log('PREVIEW: Checkbox checked:', isChecked);
 
-        console.log('PREVIEW DEBUG: Checkbox element:', checkboxElement);
-        console.log('PREVIEW DEBUG: Is checked:', isChecked);
-        console.log('PREVIEW DEBUG: Checkbox prop checked:', checkboxElement.prop('checked'));
-        console.log('PREVIEW DEBUG: Checkbox attr checked:', checkboxElement.attr('checked'));
+        // Get products
+        const products = getProducts();
+        console.log('PREVIEW: Products count:', products.length);
+        console.log('PREVIEW: Products:', products);
 
+        // Build config - NO mobileMaxWidth!
         const config = {
             storageKey: 'preview_' + Date.now(),
             showOnDesktop: isChecked,
-            title: $('#popup_title').val() || 'Product Selection',
-            products: getProducts(),
+            title: titleValue || 'Product Selection',
+            products: products,
             redisplayDays: 0
         };
 
-        console.log('PREVIEW DEBUG: Final config.showOnDesktop:', config.showOnDesktop);
+        console.log('===== FINAL PREVIEW CONFIG =====');
+        console.log(JSON.stringify(config, null, 2));
 
         if (config.products.length === 0) {
             alert('Please add at least one product before previewing.');
@@ -250,7 +263,8 @@
         // Set window config
         window.URN_POPUP_CONFIG = config;
 
-        console.log('PREVIEW DEBUG: Set window.URN_POPUP_CONFIG:', window.URN_POPUP_CONFIG);
+        console.log('===== SET window.URN_POPUP_CONFIG =====');
+        console.log(window.URN_POPUP_CONFIG);
 
         // Remove any existing preview script
         $('script[src*="popup.js"]').remove();
