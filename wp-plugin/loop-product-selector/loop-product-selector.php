@@ -150,8 +150,18 @@ class Loop_Product_Selector {
      * Enqueue admin scripts and styles
      */
     public function enqueue_admin_scripts($hook) {
-        // Debug: Log the hook value
-        error_log('LPS Admin Scripts Hook: ' . $hook);
+        // Debug: Log the hook value and context
+        error_log('LPS Admin Scripts Hook: ' . $hook . ' | is_admin: ' . (is_admin() ? 'YES' : 'NO') . ' | URL: ' . $_SERVER['REQUEST_URI']);
+
+        // Also log to console if in admin
+        if (is_admin()) {
+            echo '<script>console.log("LPS Hook Check:", ' . json_encode([
+                'hook' => $hook,
+                'expected1' => 'settings_page_loop-product-selector',
+                'expected2' => 'admin_page_loop-product-selector-edit',
+                'match' => ($hook === 'settings_page_loop-product-selector' || $hook === 'admin_page_loop-product-selector-edit')
+            ]) . ');</script>';
+        }
 
         // Load on both list and edit pages
         if ('settings_page_loop-product-selector' !== $hook && 'admin_page_loop-product-selector-edit' !== $hook) {
