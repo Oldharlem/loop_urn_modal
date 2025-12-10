@@ -3,7 +3,7 @@
  * Plugin Name: Loop Magic Popup Creator
  * Plugin URI: https://github.com/Oldharlem/loop_urn_modal
  * Description: Create unlimited mobile popups with custom products and page targeting. Perfect for product selection, promotions, and more.
- * Version: 2.0.7
+ * Version: 2.0.8
  * Author: Loop Biotech
  * Author URI: https://loop-biotech.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LPS_VERSION', '2.0.7');
+define('LPS_VERSION', '2.0.8');
 define('LPS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -185,15 +185,8 @@ class Loop_Product_Selector {
     /**
      * Check if current page matches targeting rules
      *
-     * Simple string matching:
-     * - Rules without '?' match against path only (query strings ignored)
-     * - Rules with '?' match against full URL (exact string match)
-     * - Wildcards (*) supported in both cases
-     *
-     * Examples:
-     * - /nl/dpg-discoverybox/ → matches path, ignores query params
-     * - /nl/dpg-discoverybox/?utm_source=volkskrant&utm_campaign=december → exact match required
-     * - *discoverybox* → wildcard match
+     * Simple: URL must END WITH the rule string
+     * Wildcard (*) also supported for pattern matching
      */
     private function matches_page_rules($rules) {
         // If no rules, show on all pages
@@ -202,7 +195,6 @@ class Loop_Product_Selector {
         }
 
         $current_url = $_SERVER['REQUEST_URI'];
-        $current_path = strtok($current_url, '?');
 
         $rules_array = array_filter(array_map('trim', explode("\n", $rules)));
 
@@ -213,27 +205,21 @@ class Loop_Product_Selector {
                 continue;
             }
 
-            // Check if rule contains query string
-            $rule_has_query = strpos($rule, '?') !== false;
-
-            // Determine what to match against
-            $match_against = $rule_has_query ? $current_url : $current_path;
-
-            // Exact match first
-            if ($rule === $match_against) {
-                return true;
-            }
-
-            // Wildcard match - convert * to regex
+            // Wildcard match
             if (strpos($rule, '*') !== false) {
-                // Escape special regex chars except *, then convert * to .*
                 $pattern = preg_quote($rule, '/');
                 $pattern = str_replace('\\*', '.*', $pattern);
-                $pattern = '/^' . $pattern . '$/i';
+                $pattern = '/' . $pattern . '/i';
 
-                if (preg_match($pattern, $match_against)) {
+                if (preg_match($pattern, $current_url)) {
                     return true;
                 }
+                continue;
+            }
+
+            // Simple: URL ends with rule
+            if (substr($current_url, -strlen($rule)) === $rule) {
+                return true;
             }
         }
 
