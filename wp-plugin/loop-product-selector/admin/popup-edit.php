@@ -63,7 +63,9 @@ $products_json = !empty($popup['products']) ? wp_json_encode($popup['products'])
         <?php _e('Configure your magic popup with custom products and page targeting. Each popup can display different products on different pages.', 'loop-product-selector'); ?>
     </p>
 
-    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" id="lps-settings-form">
+    <div class="lps-edit-layout">
+        <div class="lps-edit-main">
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" id="lps-settings-form">
         <?php wp_nonce_field('lps_popup_edit_action', 'lps_popup_edit_nonce'); ?>
         <input type="hidden" name="action" value="lps_save_popup">
         <input type="hidden" name="popup_id" value="<?php echo esc_attr($popup_id); ?>">
@@ -173,6 +175,21 @@ $products_json = !empty($popup['products']) ? wp_json_encode($popup['products'])
                         • <code>*/product/*</code> - Any product page<br>
                         • <code>https://example.com/specific-page</code> - Full URL match
                     </p>
+
+                    <!-- Page Targeting Test Tool -->
+                    <div class="lps-page-rules-tester">
+                        <h4><?php _e('🔍 Test Your Targeting Rules', 'loop-product-selector'); ?></h4>
+                        <div class="lps-test-url-field">
+                            <input type="text" id="lps-test-url" class="regular-text" placeholder="Enter URL to test (e.g., /product/furever/)">
+                            <button type="button" id="lps-use-current-url" class="button button-secondary">
+                                <?php _e('Use Current Page', 'loop-product-selector'); ?>
+                            </button>
+                            <button type="button" id="lps-test-page-rules" class="button button-primary">
+                                <?php _e('Test URL', 'loop-product-selector'); ?>
+                            </button>
+                        </div>
+                        <div id="lps-test-result"></div>
+                    </div>
                 </td>
             </tr>
 
@@ -225,11 +242,25 @@ $products_json = !empty($popup['products']) ? wp_json_encode($popup['products'])
         </p>
     </form>
 
-    <!-- Debug Info (remove in production) -->
-    <div style="margin-top: 20px; padding: 10px; background: #f5f5f5; border: 1px solid #ddd; display: none;" id="lps-debug">
-        <strong>Debug Info:</strong><br>
-        Popup ID: <code><?php echo esc_html($popup_id); ?></code><br>
-        Products in form: <code><?php echo esc_html($products_json); ?></code>
+            <!-- Debug Info (remove in production) -->
+            <div style="margin-top: 20px; padding: 10px; background: #f5f5f5; border: 1px solid #ddd; display: none;" id="lps-debug">
+                <strong>Debug Info:</strong><br>
+                Popup ID: <code><?php echo esc_html($popup_id); ?></code><br>
+                Products in form: <code><?php echo esc_html($products_json); ?></code>
+            </div>
+        </div>
+
+        <!-- LIVE PREVIEW SIDEBAR -->
+        <div class="lps-preview-sidebar">
+            <h3><?php _e('📱 Live Preview', 'loop-product-selector'); ?></h3>
+            <div class="lps-preview-phone">
+                <div class="lps-preview-content" id="lps-live-preview-content">
+                    <div class="lps-preview-empty">
+                        <?php _e('Add products to see preview', 'loop-product-selector'); ?>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>

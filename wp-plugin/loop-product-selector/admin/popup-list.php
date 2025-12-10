@@ -59,74 +59,182 @@ if (isset($_GET['action']) && isset($_GET['popup_id']) && check_admin_referer('l
         <?php _e('Create and manage unlimited magic popups. Each popup can have different products and show on different pages with custom targeting rules.', 'loop-product-selector'); ?>
     </p>
 
+    <?php if (!empty($popups)):
+        // Calculate stats
+        $total_popups = count($popups);
+        $enabled_popups = array_filter($popups, function($p) { return $p['enabled']; });
+        $enabled_count = count($enabled_popups);
+        $total_products = array_sum(array_map(function($p) { return count($p['products']); }, $popups));
+    ?>
+
+    <!-- Stats Cards -->
+    <div class="lps-stats">
+        <div class="lps-stat-card">
+            <h4><?php _e('Total Popups', 'loop-product-selector'); ?></h4>
+            <div class="number"><?php echo $total_popups; ?></div>
+            <div class="label"><?php echo _n('Magic Popup', 'Magic Popups', $total_popups, 'loop-product-selector'); ?></div>
+        </div>
+        <div class="lps-stat-card">
+            <h4><?php _e('Active', 'loop-product-selector'); ?></h4>
+            <div class="number"><?php echo $enabled_count; ?></div>
+            <div class="label"><?php _e('Currently Enabled', 'loop-product-selector'); ?></div>
+        </div>
+        <div class="lps-stat-card">
+            <h4><?php _e('Total Products', 'loop-product-selector'); ?></h4>
+            <div class="number"><?php echo $total_products; ?></div>
+            <div class="label"><?php _e('Across All Popups', 'loop-product-selector'); ?></div>
+        </div>
+    </div>
+
+    <!-- List Header with Search and Filters -->
+    <div class="lps-list-header">
+        <div class="lps-list-filters">
+            <div class="lps-search-box">
+                <span class="dashicons dashicons-search"></span>
+                <input type="text" id="lps-search" placeholder="<?php _e('Search popups...', 'loop-product-selector'); ?>">
+            </div>
+            <select id="lps-filter-status" class="lps-filter-status">
+                <option value="all"><?php _e('All Statuses', 'loop-product-selector'); ?></option>
+                <option value="enabled"><?php _e('Enabled Only', 'loop-product-selector'); ?></option>
+                <option value="disabled"><?php _e('Disabled Only', 'loop-product-selector'); ?></option>
+            </select>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <?php if (empty($popups)): ?>
-        <div class="notice notice-info">
-            <p><?php _e('No magic popups configured yet.', 'loop-product-selector'); ?>
-               <a href="<?php echo admin_url('admin.php?page=loop-product-selector-edit'); ?>">
-                   <?php _e('Create your first magic popup', 'loop-product-selector'); ?>
-               </a>
-            </p>
+        <div class="lps-empty-state">
+            <span class="dashicons dashicons-admin-page"></span>
+            <h3><?php _e('No Magic Popups Yet', 'loop-product-selector'); ?></h3>
+            <p><?php _e('Create your first magic popup to start engaging your visitors with targeted product promotions.', 'loop-product-selector'); ?></p>
+            <a href="<?php echo admin_url('admin.php?page=loop-product-selector-edit'); ?>" class="button button-primary button-large">
+                <span class="dashicons dashicons-plus"></span>
+                <?php _e('Create Your First Magic Popup', 'loop-product-selector'); ?>
+            </a>
         </div>
     <?php else: ?>
-        <table class="wp-list-table widefat fixed striped">
+        <table class="wp-list-table widefat fixed striped popups" id="lps-popups-table">
             <thead>
                 <tr>
-                    <th style="width: 50px;"><?php _e('Status', 'loop-product-selector'); ?></th>
-                    <th><?php _e('Popup Name', 'loop-product-selector'); ?></th>
-                    <th><?php _e('Title', 'loop-product-selector'); ?></th>
-                    <th><?php _e('Products', 'loop-product-selector'); ?></th>
-                    <th><?php _e('Page Rules', 'loop-product-selector'); ?></th>
-                    <th style="width: 200px;"><?php _e('Actions', 'loop-product-selector'); ?></th>
+                    <th style="width: 100px;"><?php _e('Status', 'loop-product-selector'); ?></th>
+                    <th class="column-name"><?php _e('Popup Details', 'loop-product-selector'); ?></th>
+                    <th style="width: 250px;"><?php _e('Actions', 'loop-product-selector'); ?></th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($popups as $popup_id => $popup): ?>
-                    <tr>
+                    <tr class="lps-popup-row" data-status="<?php echo $popup['enabled'] ? 'enabled' : 'disabled'; ?>" data-search-terms="<?php echo esc_attr(strtolower($popup['name'] . ' ' . $popup['title'])); ?>">
                         <td>
                             <?php if ($popup['enabled']): ?>
-                                <span class="dashicons dashicons-yes-alt" style="color: #46b450;" title="<?php _e('Enabled', 'loop-product-selector'); ?>"></span>
+                                <span class="lps-status-badge enabled">
+                                    <span class="dashicons dashicons-yes-alt"></span>
+                                    <?php _e('Enabled', 'loop-product-selector'); ?>
+                                </span>
                             <?php else: ?>
-                                <span class="dashicons dashicons-dismiss" style="color: #dc3232;" title="<?php _e('Disabled', 'loop-product-selector'); ?>"></span>
+                                <span class="lps-status-badge disabled">
+                                    <span class="dashicons dashicons-dismiss"></span>
+                                    <?php _e('Disabled', 'loop-product-selector'); ?>
+                                </span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td class="column-name">
                             <strong><?php echo esc_html($popup['name']); ?></strong>
+                            <div class="lps-popup-meta">
+                                <span class="lps-popup-meta-item">
+                                    <span class="dashicons dashicons-admin-appearance"></span>
+                                    <?php echo esc_html($popup['title']); ?>
+                                </span>
+                                <span class="lps-popup-meta-item">
+                                    <span class="dashicons dashicons-products"></span>
+                                    <?php echo count($popup['products']); ?> <?php echo _n('product', 'products', count($popup['products']), 'loop-product-selector'); ?>
+                                </span>
+                                <span class="lps-popup-meta-item">
+                                    <span class="dashicons dashicons-admin-links"></span>
+                                    <?php
+                                    $rules = trim($popup['page_rules']);
+                                    if (empty($rules)) {
+                                        echo '<em>' . __('All pages', 'loop-product-selector') . '</em>';
+                                    } else {
+                                        $lines = explode("\n", $rules);
+                                        echo count($lines) . ' ' . _n('rule', 'rules', count($lines), 'loop-product-selector');
+                                    }
+                                    ?>
+                                </span>
+                                <?php if (!empty($popup['show_on_desktop'])): ?>
+                                <span class="lps-popup-meta-item">
+                                    <span class="dashicons dashicons-desktop"></span>
+                                    <?php _e('Desktop enabled', 'loop-product-selector'); ?>
+                                </span>
+                                <?php endif; ?>
+                            </div>
                         </td>
-                        <td><?php echo esc_html($popup['title']); ?></td>
-                        <td><?php echo count($popup['products']); ?> products</td>
                         <td>
-                            <?php
-                            $rules = trim($popup['page_rules']);
-                            if (empty($rules)) {
-                                echo '<em>' . __('All pages', 'loop-product-selector') . '</em>';
-                            } else {
-                                $lines = explode("\n", $rules);
-                                echo count($lines) . ' ' . __('rules', 'loop-product-selector');
-                            }
-                            ?>
-                        </td>
-                        <td>
-                            <a href="<?php echo admin_url('admin.php?page=loop-product-selector-edit&popup_id=' . $popup_id); ?>"
-                               class="button button-small">
-                                <?php _e('Edit', 'loop-product-selector'); ?>
-                            </a>
-                            <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=loop-product-selector&action=toggle&popup_id=' . $popup_id), 'lps_popup_action'); ?>"
-                               class="button button-small">
-                                <?php echo $popup['enabled'] ? __('Disable', 'loop-product-selector') : __('Enable', 'loop-product-selector'); ?>
-                            </a>
-                            <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=loop-product-selector&action=duplicate&popup_id=' . $popup_id), 'lps_popup_action'); ?>"
-                               class="button button-small">
-                                <?php _e('Duplicate', 'loop-product-selector'); ?>
-                            </a>
-                            <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=loop-product-selector&action=delete&popup_id=' . $popup_id), 'lps_popup_action'); ?>"
-                               class="button button-small button-link-delete"
-                               onclick="return confirm('<?php _e('Are you sure you want to delete this popup?', 'loop-product-selector'); ?>');">
-                                <?php _e('Delete', 'loop-product-selector'); ?>
-                            </a>
+                            <div class="lps-table-actions">
+                                <a href="<?php echo admin_url('admin.php?page=loop-product-selector-edit&popup_id=' . $popup_id); ?>"
+                                   class="button button-primary">
+                                    <span class="dashicons dashicons-edit"></span>
+                                    <?php _e('Edit', 'loop-product-selector'); ?>
+                                </a>
+                                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=loop-product-selector&action=toggle&popup_id=' . $popup_id), 'lps_popup_action'); ?>"
+                                   class="button">
+                                    <?php echo $popup['enabled'] ? '<span class="dashicons dashicons-hidden"></span> ' . __('Disable', 'loop-product-selector') : '<span class="dashicons dashicons-visibility"></span> ' . __('Enable', 'loop-product-selector'); ?>
+                                </a>
+                                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=loop-product-selector&action=duplicate&popup_id=' . $popup_id), 'lps_popup_action'); ?>"
+                                   class="button">
+                                    <span class="dashicons dashicons-admin-page"></span>
+                                    <?php _e('Duplicate', 'loop-product-selector'); ?>
+                                </a>
+                                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=loop-product-selector&action=delete&popup_id=' . $popup_id), 'lps_popup_action'); ?>"
+                                   class="button button-link-delete"
+                                   onclick="return confirm('<?php _e('Are you sure you want to delete this popup?', 'loop-product-selector'); ?>');">
+                                    <span class="dashicons dashicons-trash"></span>
+                                    <?php _e('Delete', 'loop-product-selector'); ?>
+                                </a>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Search functionality
+            $('#lps-search').on('input', function() {
+                const searchTerm = $(this).val().toLowerCase();
+                filterTable();
+            });
+
+            // Status filter
+            $('#lps-filter-status').on('change', function() {
+                filterTable();
+            });
+
+            function filterTable() {
+                const searchTerm = $('#lps-search').val().toLowerCase();
+                const statusFilter = $('#lps-filter-status').val();
+
+                $('.lps-popup-row').each(function() {
+                    const $row = $(this);
+                    const searchTerms = $row.data('search-terms');
+                    const status = $row.data('status');
+
+                    let showRow = true;
+
+                    // Apply search filter
+                    if (searchTerm && searchTerms.indexOf(searchTerm) === -1) {
+                        showRow = false;
+                    }
+
+                    // Apply status filter
+                    if (statusFilter !== 'all' && status !== statusFilter) {
+                        showRow = false;
+                    }
+
+                    $row.toggle(showRow);
+                });
+            }
+        });
+        </script>
     <?php endif; ?>
 </div>

@@ -242,4 +242,191 @@
         document.body.appendChild(script);
     }
 
+    // ========================================
+    // FEATURE 1: LIVE PREVIEW SIDEBAR
+    // ========================================
+
+    function updateLivePreview() {
+        const title = $('#popup_title').val() || 'Your Title Here';
+        const products = getProducts();
+        const $preview = $('#lps-live-preview-content');
+
+        if (!$preview.length) return;
+
+        if (products.length === 0) {
+            $preview.html('<div class="lps-preview-empty">Add products to see preview</div>');
+            return;
+        }
+
+        // Determine grid columns
+        let colsClass = 'cols-1';
+        if (products.length === 2) colsClass = 'cols-2';
+        else if (products.length >= 3) colsClass = 'cols-3';
+
+        // Generate product cards
+        const productCards = products.map(product => {
+            const subtitle = product.subtitle ?
+                `<p class="lps-preview-product-subtitle">${escapeHtml(product.subtitle)}</p>` : '';
+
+            return `
+                <div class="lps-preview-product">
+                    ${product.image ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}" class="lps-preview-product-image">` : '<div class="lps-preview-product-image"></div>'}
+                    <p class="lps-preview-product-title">${escapeHtml(product.title)}</p>
+                    ${subtitle}
+                </div>
+            `;
+        }).join('');
+
+        const html = `
+            <h2 class="lps-preview-title">${escapeHtml(title)}</h2>
+            <div class="lps-preview-products ${colsClass}">
+                ${productCards}
+            </div>
+            <button class="lps-preview-close">Sluiten</button>
+        `;
+
+        $preview.html(html);
+    }
+
+    // Update preview on any input change
+    $('#lps-settings-form').on('input change', 'input, textarea', function() {
+        updateLivePreview();
+    });
+
+    // Initialize preview after products are loaded
+    setTimeout(() => {
+        updateLivePreview();
+    }, 100);
+
+    // ========================================
+    // FEATURE 2: DRAG AND DROP PRODUCTS
+    // ========================================
+
+    let draggedElement = null;
+
+    $('#lps-products-container').on('dragstart', '.lps-product-item', function(e) {
+        draggedElement = this;
+        $(this).addClass('dragging');
+        $('#lps-products-container').addClass('dragging');
+        e.originalEvent.dataTransfer.effectAllowed = 'move';
+        e.originalEvent.dataTransfer.setData('text/html', this.innerHTML);
+    });
+
+    $('#lps-products-container').on('dragend', '.lps-product-item', function(e) {
+        $(this).removeClass('dragging');
+        $('#lps-products-container').removeClass('dragging');
+        $('.lps-product-item').removeClass('drag-over');
+        draggedElement = null;
+    });
+
+    $('#lps-products-container').on('dragover', '.lps-product-item', function(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+
+        e.originalEvent.dataTransfer.dropEffect = 'move';
+
+        if (this !== draggedElement) {
+            $(this).addClass('drag-over');
+        }
+
+        return false;
+    });
+
+    $('#lps-products-container').on('dragleave', '.lps-product-item', function(e) {
+        $(this).removeClass('drag-over');
+    });
+
+    $('#lps-products-container').on('drop', '.lps-product-item', function(e) {
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        }
+
+        if (draggedElement !== this) {
+            const $dragged = $(draggedElement);
+            const $target = $(this);
+
+            // Insert before or after based on position
+            const targetRect = this.getBoundingClientRect();
+            const targetMiddle = targetRect.top + (targetRect.height / 2);
+
+            if (e.originalEvent.clientY < targetMiddle) {
+                $target.before($dragged);
+            } else {
+                $target.after($dragged);
+            }
+
+            updateProductNumbers();
+            updateHiddenField();
+            updateLivePreview();
+        }
+
+        $('.lps-product-item').removeClass('drag-over');
+        return false;
+    });
+
+    // Make product items draggable
+    function makeProductsDraggable() {
+        $('.lps-product-item').attr('draggable', 'true');
+    }
+
+    // Call after adding products
+    const originalAddProduct = addProduct;
+    addProduct = function(product) {
+        originalAddProduct(product);
+        makeProductsDraggable();
+    };
+
+    // ========================================
+    // FEATURE 3: PAGE TARGETING TEST TOOL
+    // ========================================
+
+    $('#lps-test-page-rules').on('click', function() {
+        const rules = $('#popup_page_rules').val().trim();
+        const testUrl = $('#lps-test-url').val().trim();
+        const $result = $('#lps-test-result');
+
+        if (!rules) {
+            $result.html('<div class="lps-test-result error"><span class="lps-test-result-icon">✗</span> Please enter page targeting rules first.</div>');
+            return;
+        }
+
+        if (!testUrl) {
+            $result.html('<div class="lps-test-result error"><span class="lps-test-result-icon">✗</span> Please enter a URL to test.</div>');
+            return;
+        }
+
+        // Test rules (client-side simulation)
+        const rulesArray = rules.split('\n').filter(r => r.trim());
+        let matched = false;
+
+        for (let rule of rulesArray) {
+            rule = rule.trim();
+            if (!rule) continue;
+
+            // Convert wildcard to regex
+            const pattern = rule
+                .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                .replace(/\\\*/g, '.*');
+
+            const regex = new RegExp('^' + pattern + '$', 'i');
+
+            if (regex.test(testUrl)) {
+                matched = true;
+                $result.html(`<div class="lps-test-result success"><span class="lps-test-result-icon">✓</span> <strong>Match found!</strong> URL matches rule: <code>${escapeHtml(rule)}</code></div>`);
+                break;
+            }
+        }
+
+        if (!matched) {
+            $result.html('<div class="lps-test-result error"><span class="lps-test-result-icon">✗</span> <strong>No match.</strong> This URL does not match any of your targeting rules.</div>');
+        }
+    });
+
+    // Auto-fill current page URL
+    $('#lps-use-current-url').on('click', function() {
+        const currentUrl = window.location.pathname;
+        $('#lps-test-url').val(currentUrl);
+    });
+
 })(jQuery);
