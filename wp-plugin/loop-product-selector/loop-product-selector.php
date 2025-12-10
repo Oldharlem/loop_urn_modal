@@ -236,7 +236,12 @@ class Loop_Product_Selector {
             }
 
             // This popup should be shown
-            $show_on_desktop_value = (bool) (!empty($popup['show_on_desktop']));
+            // Ensure show_on_desktop exists for backward compatibility
+            $field_existed = isset($popup['show_on_desktop']);
+            if (!$field_existed) {
+                $popup['show_on_desktop'] = false;
+            }
+            $show_on_desktop_value = (bool) $popup['show_on_desktop'];
 
             $matching_popups[] = array(
                 'storageKey' => $popup['storage_key'],
@@ -247,8 +252,9 @@ class Loop_Product_Selector {
                 // Debug info
                 '_debug' => array(
                     'popup_id' => $popup_id,
-                    'raw_show_on_desktop' => isset($popup['show_on_desktop']) ? $popup['show_on_desktop'] : 'NOT_SET',
-                    'raw_type' => isset($popup['show_on_desktop']) ? gettype($popup['show_on_desktop']) : 'N/A',
+                    'field_existed' => $field_existed ? 'YES' : 'NO (defaulted to false)',
+                    'raw_show_on_desktop' => $popup['show_on_desktop'],
+                    'raw_type' => gettype($popup['show_on_desktop']),
                     'processed_value' => $show_on_desktop_value
                 )
             );

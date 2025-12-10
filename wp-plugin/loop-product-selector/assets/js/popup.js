@@ -34,6 +34,11 @@
   for (let i = 0; i < CONFIGS.length; i++) {
     const config = CONFIGS[i];
 
+    // Backward compatibility: ensure showOnDesktop exists
+    if (typeof config.showOnDesktop === 'undefined') {
+      config.showOnDesktop = false;
+    }
+
     // Validate configuration
     if (!config.products || !Array.isArray(config.products) || config.products.length === 0) {
       continue;
