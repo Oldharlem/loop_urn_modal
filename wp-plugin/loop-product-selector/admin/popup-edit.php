@@ -18,9 +18,12 @@ $is_edit = $popup_id && isset($popups[$popup_id]);
 // Load existing popup data or set defaults
 if ($is_edit) {
     $popup = $popups[$popup_id];
-    // Ensure show_on_desktop exists for backwards compatibility
+    // Ensure show_on_desktop exists and is boolean for backwards compatibility
     if (!isset($popup['show_on_desktop'])) {
         $popup['show_on_desktop'] = false;
+    } else {
+        // Cast to boolean to handle old string values
+        $popup['show_on_desktop'] = (bool) $popup['show_on_desktop'];
     }
     $page_title = __('Edit Magic Popup', 'loop-product-selector');
 } else {

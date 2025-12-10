@@ -238,7 +238,7 @@ class Loop_Product_Selector {
             // This popup should be shown
             $matching_popups[] = array(
                 'storageKey' => $popup['storage_key'],
-                'showOnDesktop' => !empty($popup['show_on_desktop']),
+                'showOnDesktop' => (bool) (!empty($popup['show_on_desktop'])),
                 'title' => $popup['title'],
                 'products' => $popup['products'],
                 'redisplayDays' => intval($popup['redisplay_days'])
@@ -276,7 +276,7 @@ class Loop_Product_Selector {
 
         $config = array(
             'storageKey' => 'preview_' . time(),
-            'showOnDesktop' => !empty($_POST['showOnDesktop']),
+            'showOnDesktop' => (bool) (!empty($_POST['showOnDesktop'])),
             'title' => sanitize_text_field($_POST['title']),
             'products' => json_decode(stripslashes($_POST['products']), true),
             'redisplayDays' => 0
@@ -315,9 +315,9 @@ class Loop_Product_Selector {
         // Sanitize basic settings
         $popup['id'] = $popup_id;
         $popup['name'] = sanitize_text_field($_POST['popup_name']);
-        $popup['enabled'] = isset($_POST['popup_enabled']);
+        $popup['enabled'] = isset($_POST['popup_enabled']) ? true : false;
         $popup['title'] = sanitize_text_field($_POST['popup_title']);
-        $popup['show_on_desktop'] = isset($_POST['popup_show_on_desktop']);
+        $popup['show_on_desktop'] = isset($_POST['popup_show_on_desktop']) ? true : false;
         $popup['redisplay_days'] = absint($_POST['popup_redisplay_days']);
         $popup['page_rules'] = sanitize_textarea_field($_POST['popup_page_rules']);
         $popup['storage_key'] = sanitize_key($_POST['popup_storage_key']);
