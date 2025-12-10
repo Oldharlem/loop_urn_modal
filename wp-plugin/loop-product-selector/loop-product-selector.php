@@ -3,7 +3,7 @@
  * Plugin Name: Loop Magic Popup Creator
  * Plugin URI: https://github.com/Oldharlem/loop_urn_modal
  * Description: Create unlimited mobile popups with custom products and page targeting. Perfect for product selection, promotions, and more.
- * Version: 2.0.2
+ * Version: 2.0.3
  * Author: Loop Biotech
  * Author URI: https://loop-biotech.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LPS_VERSION', '2.0.2');
+define('LPS_VERSION', '2.0.3');
 define('LPS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -184,6 +184,14 @@ class Loop_Product_Selector {
 
     /**
      * Check if current page matches targeting rules
+     *
+     * Rules behavior:
+     * - If rule contains '?', match against full URL with query strings
+     * - If rule doesn't contain '?', match against path only (ignores query strings)
+     *
+     * Examples:
+     * - /nl/dpg-discoverybox/ → matches any URL with that path
+     * - /nl/dpg-discoverybox/?utm_source=volkskrant* → matches only with that UTM
      */
     private function matches_page_rules($rules) {
         // If no rules, show on all pages
@@ -194,7 +202,7 @@ class Loop_Product_Selector {
         $current_url = $_SERVER['REQUEST_URI'];
         $full_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 
-        // Also get URLs without query strings for matching
+        // Get URLs without query strings for path-only matching
         $current_path = strtok($current_url, '?');
         $full_url_path = strtok($full_url, '?');
 
@@ -207,28 +215,36 @@ class Loop_Product_Selector {
                 continue;
             }
 
+            // Determine if rule includes query string matching
+            $rule_has_query = strpos($rule, '?') !== false;
+
             // Convert wildcard pattern to regex
+            // Escape ? for regex, then convert * to .*
             $pattern = str_replace(
-                array('*', '/'),
-                array('.*', '\/'),
+                array('?', '*', '/'),
+                array('\\?', '.*', '\\/'),
                 $rule
             );
             $pattern = '/^' . $pattern . '$/i';
 
-            // Check against URLs with query strings
-            if (preg_match($pattern, $current_url) || preg_match($pattern, $full_url)) {
-                return true;
-            }
-
-            // Check against URLs without query strings (most common use case)
-            if (preg_match($pattern, $current_path) || preg_match($pattern, $full_url_path)) {
-                return true;
-            }
-
-            // Also check exact match (with and without query strings)
-            if ($rule === $current_url || $rule === $full_url ||
-                $rule === $current_path || $rule === $full_url_path) {
-                return true;
+            if ($rule_has_query) {
+                // Rule has query params - match against full URLs only
+                if (preg_match($pattern, $current_url) || preg_match($pattern, $full_url)) {
+                    return true;
+                }
+                // Also check exact match
+                if ($rule === $current_url || $rule === $full_url) {
+                    return true;
+                }
+            } else {
+                // Rule has no query params - match against path only (ignore query strings)
+                if (preg_match($pattern, $current_path) || preg_match($pattern, $full_url_path)) {
+                    return true;
+                }
+                // Also check exact match
+                if ($rule === $current_path || $rule === $full_url_path) {
+                    return true;
+                }
             }
         }
 
