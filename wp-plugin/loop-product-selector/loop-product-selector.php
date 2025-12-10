@@ -3,7 +3,7 @@
  * Plugin Name: Loop Magic Popup Creator
  * Plugin URI: https://github.com/Oldharlem/loop_urn_modal
  * Description: Create unlimited mobile popups with custom products and page targeting. Perfect for product selection, promotions, and more.
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Loop Biotech
  * Author URI: https://loop-biotech.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LPS_VERSION', '2.0.0');
+define('LPS_VERSION', '2.0.1');
 define('LPS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
