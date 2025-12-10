@@ -10,17 +10,38 @@ if (!defined('ABSPATH')) {
 
 // Handle form submission
 if (isset($_POST['lps_save_settings']) && check_admin_referer('lps_settings_action', 'lps_settings_nonce')) {
+    // Save basic settings
     update_option('lps_enabled', isset($_POST['lps_enabled']));
     update_option('lps_mobile_max_width', absint($_POST['lps_mobile_max_width']));
     update_option('lps_title', sanitize_text_field($_POST['lps_title']));
     update_option('lps_storage_key', sanitize_key($_POST['lps_storage_key']));
     update_option('lps_redisplay_days', absint($_POST['lps_redisplay_days']));
     update_option('lps_page_rules', sanitize_textarea_field($_POST['lps_page_rules']));
-    update_option('lps_products', $this->sanitize_products($_POST['lps_products']));
+
+    // Sanitize and save products
+    $products_json = isset($_POST['lps_products']) ? wp_unslash($_POST['lps_products']) : '[]';
+    $products_array = json_decode($products_json, true);
+
+    if (is_array($products_array)) {
+        $sanitized = array();
+        foreach ($products_array as $product) {
+            if (isset($product['title']) && isset($product['url']) && isset($product['image'])) {
+                $sanitized[] = array(
+                    'title' => sanitize_text_field($product['title']),
+                    'subtitle' => isset($product['subtitle']) ? sanitize_text_field($product['subtitle']) : '',
+                    'url' => esc_url_raw($product['url']),
+                    'image' => esc_url_raw($product['image'])
+                );
+            }
+        }
+        update_option('lps_products', wp_json_encode($sanitized));
+    } else {
+        update_option('lps_products', '[]');
+    }
 
     echo '<div class="notice notice-success is-dismissible"><p>' . __('Settings saved successfully!', 'loop-product-selector') . '</p></div>';
 
-    // Refresh values
+    // Refresh values after save
     $enabled = get_option('lps_enabled', true);
     $mobile_width = get_option('lps_mobile_max_width', 768);
     $title = get_option('lps_title');
@@ -162,6 +183,22 @@ if (isset($_POST['lps_save_settings']) && check_admin_referer('lps_settings_acti
             </button>
         </p>
     </form>
+
+    <!-- Debug Info (remove in production) -->
+    <div style="margin-top: 20px; padding: 10px; background: #f5f5f5; border: 1px solid #ddd; display: none;" id="lps-debug">
+        <strong>Debug Info:</strong><br>
+        Products in DB: <code><?php echo esc_html($products); ?></code>
+    </div>
+
+    <script>
+        // Toggle debug info with Ctrl+Shift+D
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                document.getElementById('lps-debug').style.display =
+                    document.getElementById('lps-debug').style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    </script>
 
     <!-- Preview Modal Container -->
     <div id="lps-preview-container"></div>
