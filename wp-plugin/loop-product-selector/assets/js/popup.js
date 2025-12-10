@@ -53,8 +53,8 @@
 
   // Check if popup should be shown
   function shouldShowPopup(config) {
-    // Check if mobile device
-    if (window.innerWidth > config.mobileMaxWidth) {
+    // Check if mobile device (unless showOnDesktop is enabled)
+    if (!config.showOnDesktop && window.innerWidth > config.mobileMaxWidth) {
       return false;
     }
 

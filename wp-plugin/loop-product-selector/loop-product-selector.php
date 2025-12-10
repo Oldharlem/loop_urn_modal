@@ -236,6 +236,7 @@ class Loop_Product_Selector {
             $matching_popups[] = array(
                 'storageKey' => $popup['storage_key'],
                 'mobileMaxWidth' => intval($popup['mobile_max_width']),
+                'showOnDesktop' => !empty($popup['show_on_desktop']),
                 'title' => $popup['title'],
                 'products' => $popup['products'],
                 'redisplayDays' => intval($popup['redisplay_days'])

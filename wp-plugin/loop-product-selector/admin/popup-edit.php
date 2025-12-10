@@ -28,6 +28,7 @@ if ($is_edit) {
         'enabled' => true,
         'title' => 'Which product are you interested in?',
         'mobile_max_width' => 768,
+        'show_on_desktop' => false,
         'redisplay_days' => 0,
         'storage_key' => $popup_id . '_shown',
         'page_rules' => '',
@@ -44,6 +45,7 @@ if (isset($_POST['popup_save']) && check_admin_referer('lps_popup_edit_action', 
     $popup['enabled'] = isset($_POST['popup_enabled']);
     $popup['title'] = sanitize_text_field($_POST['popup_title']);
     $popup['mobile_max_width'] = absint($_POST['popup_mobile_max_width']);
+    $popup['show_on_desktop'] = isset($_POST['popup_show_on_desktop']);
     $popup['redisplay_days'] = absint($_POST['popup_redisplay_days']);
     $popup['page_rules'] = sanitize_textarea_field($_POST['popup_page_rules']);
     $popup['storage_key'] = sanitize_key($_POST['popup_storage_key']);
@@ -161,6 +163,22 @@ $products_json = !empty($popup['products']) ? wp_json_encode($popup['products'])
                 </td>
             </tr>
 
+            <!-- Show on Desktop -->
+            <tr>
+                <th scope="row">
+                    <label for="popup_show_on_desktop"><?php _e('Show on Desktop', 'loop-product-selector'); ?></label>
+                </th>
+                <td>
+                    <label class="lps-toggle">
+                        <input type="checkbox" id="popup_show_on_desktop" name="popup_show_on_desktop" value="1" <?php checked(!empty($popup['show_on_desktop']), true); ?>>
+                        <span class="lps-toggle-slider"></span>
+                    </label>
+                    <p class="description">
+                        <?php _e('Enable this to show the magic popup on desktop devices as well (ignores mobile width limit).', 'loop-product-selector'); ?>
+                    </p>
+                </td>
+            </tr>
+
             <!-- Popup Title -->
             <tr>
                 <th scope="row">
@@ -184,7 +202,7 @@ $products_json = !empty($popup['products']) ? wp_json_encode($popup['products'])
                     <input type="number" id="popup_redisplay_days" name="popup_redisplay_days"
                            value="<?php echo esc_attr($popup['redisplay_days']); ?>" min="0" max="3650" step="1" class="small-text">
                     <p class="description">
-                        <?php _e('Number of days before the magic popup can show again. Set to 0 to show only once (default). Set to 365 for yearly, 1825 for every 5 years, etc.', 'loop-product-selector'); ?>
+                        <?php _e('Number of days before the magic popup can show again after being closed. Set to 0 to always show on every visit (default). Set to 365 for yearly, 1825 for every 5 years, etc.', 'loop-product-selector'); ?>
                     </p>
                 </td>
             </tr>
