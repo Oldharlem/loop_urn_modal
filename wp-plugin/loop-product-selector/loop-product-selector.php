@@ -3,7 +3,7 @@
  * Plugin Name: Loop Magic Popup Creator
  * Plugin URI: https://github.com/Oldharlem/loop_urn_modal
  * Description: Create unlimited mobile popups with custom products and page targeting. Perfect for product selection, promotions, and more.
- * Version: 2.0.3
+ * Version: 2.0.4
  * Author: Loop Biotech
  * Author URI: https://loop-biotech.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LPS_VERSION', '2.0.3');
+define('LPS_VERSION', '2.0.4');
 define('LPS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -263,24 +263,50 @@ class Loop_Product_Selector {
         // Get all popups
         $popups = get_option('lps_popups', array());
 
+        // Debug info for admins
+        $debug_info = array(
+            'current_url' => $_SERVER['REQUEST_URI'],
+            'current_path' => strtok($_SERVER['REQUEST_URI'], '?'),
+            'total_popups' => count($popups),
+            'popup_checks' => array()
+        );
+
         // Filter to get enabled popups that match page rules
         $matching_popups = array();
 
         foreach ($popups as $popup_id => $popup) {
+            $check = array(
+                'popup_id' => $popup_id,
+                'name' => $popup['name'] ?? 'Unknown',
+                'enabled' => $popup['enabled'] ?? false,
+                'has_products' => !empty($popup['products']),
+                'page_rules' => $popup['page_rules'] ?? '',
+                'skip_reason' => null
+            );
+
             // Skip if disabled
             if (!$popup['enabled']) {
+                $check['skip_reason'] = 'disabled';
+                $debug_info['popup_checks'][] = $check;
                 continue;
             }
 
             // Skip if no products
             if (empty($popup['products'])) {
+                $check['skip_reason'] = 'no_products';
+                $debug_info['popup_checks'][] = $check;
                 continue;
             }
 
             // Check page targeting rules
             if (!$this->matches_page_rules($popup['page_rules'])) {
+                $check['skip_reason'] = 'page_rules_no_match';
+                $debug_info['popup_checks'][] = $check;
                 continue;
             }
+
+            $check['skip_reason'] = 'MATCHED';
+            $debug_info['popup_checks'][] = $check;
 
             // This popup should be shown
             // Ensure show_on_desktop exists for backward compatibility
@@ -305,6 +331,12 @@ class Loop_Product_Selector {
                     'processed_value' => $show_on_desktop_value
                 )
             );
+        }
+
+        // Debug output for admins (visible in page source)
+        if (current_user_can('manage_options')) {
+            echo "\n<!-- Loop Magic Popup Debug v" . LPS_VERSION . " -->\n";
+            echo "<!-- " . esc_html(json_encode($debug_info, JSON_PRETTY_PRINT)) . " -->\n";
         }
 
         // Don't load if no matching popups
