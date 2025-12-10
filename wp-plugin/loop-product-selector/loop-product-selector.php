@@ -277,6 +277,12 @@ class Loop_Product_Selector {
         // Pass all matching popups to JavaScript
         // The frontend script will handle showing them (first matching one)
         wp_localize_script('lps-popup', 'URN_POPUP_CONFIGS', $matching_popups);
+
+        // Debug: Log what we're passing (visible in page source for admins)
+        if (current_user_can('manage_options')) {
+            echo "\n<!-- Loop Magic Popup Debug: Passing " . count($matching_popups) . " popup(s) to JavaScript -->\n";
+            echo "<!-- Config data: " . esc_html(json_encode($matching_popups, JSON_PRETTY_PRINT)) . " -->\n";
+        }
     }
 
     /**

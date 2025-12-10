@@ -13,20 +13,27 @@
 
   // Get configurations - support both single and multiple popups
   let CONFIGS = [];
+  let configSource = 'NONE';
 
   // Check for multiple popups first (WordPress plugin multi-popup mode)
   if (window.URN_POPUP_CONFIGS && Array.isArray(window.URN_POPUP_CONFIGS)) {
     CONFIGS = window.URN_POPUP_CONFIGS;
+    configSource = 'URN_POPUP_CONFIGS (multi-popup from plugin)';
   }
   // Fall back to single popup (backward compatibility or preview mode)
   else if (window.URN_POPUP_CONFIG) {
     CONFIGS = [window.URN_POPUP_CONFIG];
+    configSource = 'URN_POPUP_CONFIG (preview or old version)';
   }
   // No configuration found
   else {
     console.log('URN Popup: No configuration found');
     return;
   }
+
+  console.log('Loop Magic Popup: Config source:', configSource);
+  console.log('Loop Magic Popup: Number of configs loaded:', CONFIGS.length);
+  console.log('Loop Magic Popup: Full config data:', CONFIGS);
 
   // Find first popup that should be shown
   let CONFIG = null;
