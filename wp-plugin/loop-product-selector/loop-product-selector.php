@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Loop Product Selector
+ * Plugin Name: Loop Magic Popup Creator
  * Plugin URI: https://github.com/Oldharlem/loop_urn_modal
- * Description: Mobile-only popup that displays product selection options. Fully configurable through WordPress admin.
- * Version: 1.1.0
+ * Description: Create unlimited mobile popups with custom products and page targeting. Perfect for product selection, promotions, and more.
+ * Version: 2.0.0
  * Author: Loop Biotech
  * Author URI: https://loop-biotech.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LPS_VERSION', '1.1.0');
+define('LPS_VERSION', '2.0.0');
 define('LPS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -49,12 +49,23 @@ class Loop_Product_Selector {
      * Add admin menu page
      */
     public function add_admin_menu() {
+        // Main menu page - Popup List
         add_options_page(
-            __('Product Selector Settings', 'loop-product-selector'),
+            __('Product Selector Popups', 'loop-product-selector'),
             __('Product Selector', 'loop-product-selector'),
             'manage_options',
             'loop-product-selector',
-            array($this, 'render_admin_page')
+            array($this, 'render_popup_list_page')
+        );
+
+        // Submenu for Add/Edit (hidden from menu, accessed via links)
+        add_submenu_page(
+            null, // null parent = hidden from menu
+            __('Edit Popup', 'loop-product-selector'),
+            __('Edit Popup', 'loop-product-selector'),
+            'manage_options',
+            'loop-product-selector-edit',
+            array($this, 'render_popup_edit_page')
         );
     }
 
@@ -136,7 +147,8 @@ class Loop_Product_Selector {
      * Enqueue admin scripts and styles
      */
     public function enqueue_admin_scripts($hook) {
-        if ('settings_page_loop-product-selector' !== $hook) {
+        // Load on both list and edit pages
+        if ('settings_page_loop-product-selector' !== $hook && 'admin_page_loop-product-selector-edit' !== $hook) {
             return;
         }
 
@@ -154,9 +166,7 @@ class Loop_Product_Selector {
     /**
      * Check if current page matches targeting rules
      */
-    private function matches_page_rules() {
-        $rules = get_option('lps_page_rules', '');
-
+    private function matches_page_rules($rules) {
         // If no rules, show on all pages
         if (empty(trim($rules))) {
             return true;
@@ -200,25 +210,44 @@ class Loop_Product_Selector {
      * Enqueue frontend scripts
      */
     public function enqueue_frontend_scripts() {
-        // Check if plugin is enabled
-        if (!get_option('lps_enabled', true)) {
+        // Get all popups
+        $popups = get_option('lps_popups', array());
+
+        // Filter to get enabled popups that match page rules
+        $matching_popups = array();
+
+        foreach ($popups as $popup_id => $popup) {
+            // Skip if disabled
+            if (!$popup['enabled']) {
+                continue;
+            }
+
+            // Skip if no products
+            if (empty($popup['products'])) {
+                continue;
+            }
+
+            // Check page targeting rules
+            if (!$this->matches_page_rules($popup['page_rules'])) {
+                continue;
+            }
+
+            // This popup should be shown
+            $matching_popups[] = array(
+                'storageKey' => $popup['storage_key'],
+                'mobileMaxWidth' => intval($popup['mobile_max_width']),
+                'title' => $popup['title'],
+                'products' => $popup['products'],
+                'redisplayDays' => intval($popup['redisplay_days'])
+            );
+        }
+
+        // Don't load if no matching popups
+        if (empty($matching_popups)) {
             return;
         }
 
-        // Check page targeting rules
-        if (!$this->matches_page_rules()) {
-            return;
-        }
-
-        // Get products
-        $products = json_decode(get_option('lps_products', '[]'), true);
-
-        // Don't load if no products configured
-        if (empty($products)) {
-            return;
-        }
-
-        // Enqueue the popup script
+        // Enqueue the popup script once
         wp_enqueue_script(
             'lps-popup',
             LPS_PLUGIN_URL . 'assets/js/popup.js',
@@ -227,16 +256,9 @@ class Loop_Product_Selector {
             true
         );
 
-        // Pass configuration to JavaScript
-        $config = array(
-            'storageKey' => get_option('lps_storage_key', 'product_selection_shown'),
-            'mobileMaxWidth' => intval(get_option('lps_mobile_max_width', 768)),
-            'title' => get_option('lps_title', 'Which product are you interested in?'),
-            'products' => $products,
-            'redisplayDays' => intval(get_option('lps_redisplay_days', 0))
-        );
-
-        wp_localize_script('lps-popup', 'URN_POPUP_CONFIG', $config);
+        // Pass all matching popups to JavaScript
+        // The frontend script will handle showing them (first matching one)
+        wp_localize_script('lps-popup', 'URN_POPUP_CONFIGS', $matching_popups);
     }
 
     /**
@@ -261,23 +283,25 @@ class Loop_Product_Selector {
     }
 
     /**
-     * Render admin page
+     * Render popup list page
      */
-    public function render_admin_page() {
+    public function render_popup_list_page() {
         if (!current_user_can('manage_options')) {
             return;
         }
 
-        // Get current settings
-        $enabled = get_option('lps_enabled', true);
-        $mobile_width = get_option('lps_mobile_max_width', 768);
-        $title = get_option('lps_title', 'Which product are you interested in?');
-        $storage_key = get_option('lps_storage_key', 'product_selection_shown');
-        $redisplay_days = get_option('lps_redisplay_days', 0);
-        $page_rules = get_option('lps_page_rules', '');
-        $products = get_option('lps_products', '[]');
+        include LPS_PLUGIN_DIR . 'admin/popup-list.php';
+    }
 
-        include LPS_PLUGIN_DIR . 'admin/admin-page.php';
+    /**
+     * Render popup edit page
+     */
+    public function render_popup_edit_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        include LPS_PLUGIN_DIR . 'admin/popup-edit.php';
     }
 }
 
@@ -289,31 +313,8 @@ add_action('plugins_loaded', 'loop_product_selector_init');
 
 // Activation hook
 register_activation_hook(__FILE__, function() {
-    // Set default options
-    add_option('lps_enabled', true);
-    add_option('lps_mobile_max_width', 768);
-    add_option('lps_title', 'Which product are you interested in?');
-    add_option('lps_storage_key', 'product_selection_shown');
-    add_option('lps_redisplay_days', 0);
-    add_option('lps_page_rules', '');
-
-    // Set default products (generic examples)
-    $default_products = array(
-        array(
-            'title' => 'Product 1',
-            'subtitle' => 'First option',
-            'url' => home_url('/product-1/'),
-            'image' => 'https://via.placeholder.com/400x400/cccccc/666666?text=Product+1'
-        ),
-        array(
-            'title' => 'Product 2',
-            'subtitle' => 'Second option',
-            'url' => home_url('/product-2/'),
-            'image' => 'https://via.placeholder.com/400x400/cccccc/666666?text=Product+2'
-        )
-    );
-
-    add_option('lps_products', wp_json_encode($default_products));
+    // Initialize popups array (empty by default - users add their own)
+    add_option('lps_popups', array());
 });
 
 // Deactivation hook

@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Settings Page Template
+ * Popup Edit/Add Page - Individual Popup Configuration
  */
 
 // Exit if accessed directly
@@ -8,18 +8,48 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Get all popups
+$popups = get_option('lps_popups', array());
+
+// Determine if we're editing or adding
+$popup_id = isset($_GET['popup_id']) ? sanitize_key($_GET['popup_id']) : null;
+$is_edit = $popup_id && isset($popups[$popup_id]);
+
+// Load existing popup data or set defaults
+if ($is_edit) {
+    $popup = $popups[$popup_id];
+    $page_title = __('Edit Popup', 'loop-product-selector');
+} else {
+    // Generate new popup ID
+    $popup_id = 'popup_' . time();
+    $popup = array(
+        'id' => $popup_id,
+        'name' => '',
+        'enabled' => true,
+        'title' => 'Which product are you interested in?',
+        'mobile_max_width' => 768,
+        'redisplay_days' => 0,
+        'storage_key' => $popup_id . '_shown',
+        'page_rules' => '',
+        'products' => array()
+    );
+    $page_title = __('Add New Popup', 'loop-product-selector');
+}
+
 // Handle form submission
-if (isset($_POST['lps_save_settings']) && check_admin_referer('lps_settings_action', 'lps_settings_nonce')) {
-    // Save basic settings
-    update_option('lps_enabled', isset($_POST['lps_enabled']));
-    update_option('lps_mobile_max_width', absint($_POST['lps_mobile_max_width']));
-    update_option('lps_title', sanitize_text_field($_POST['lps_title']));
-    update_option('lps_storage_key', sanitize_key($_POST['lps_storage_key']));
-    update_option('lps_redisplay_days', absint($_POST['lps_redisplay_days']));
-    update_option('lps_page_rules', sanitize_textarea_field($_POST['lps_page_rules']));
+if (isset($_POST['popup_save']) && check_admin_referer('lps_popup_edit_action', 'lps_popup_edit_nonce')) {
+    // Sanitize basic settings
+    $popup['id'] = $popup_id;
+    $popup['name'] = sanitize_text_field($_POST['popup_name']);
+    $popup['enabled'] = isset($_POST['popup_enabled']);
+    $popup['title'] = sanitize_text_field($_POST['popup_title']);
+    $popup['mobile_max_width'] = absint($_POST['popup_mobile_max_width']);
+    $popup['redisplay_days'] = absint($_POST['popup_redisplay_days']);
+    $popup['page_rules'] = sanitize_textarea_field($_POST['popup_page_rules']);
+    $popup['storage_key'] = sanitize_key($_POST['popup_storage_key']);
 
     // Sanitize and save products
-    $products_json = isset($_POST['lps_products']) ? wp_unslash($_POST['lps_products']) : '[]';
+    $products_json = isset($_POST['popup_products']) ? wp_unslash($_POST['popup_products']) : '[]';
     $products_array = json_decode($products_json, true);
 
     if (is_array($products_array)) {
@@ -34,46 +64,85 @@ if (isset($_POST['lps_save_settings']) && check_admin_referer('lps_settings_acti
                 );
             }
         }
-        update_option('lps_products', wp_json_encode($sanitized));
+        $popup['products'] = $sanitized;
     } else {
-        update_option('lps_products', '[]');
+        $popup['products'] = array();
     }
 
-    echo '<div class="notice notice-success is-dismissible"><p>' . __('Settings saved successfully!', 'loop-product-selector') . '</p></div>';
+    // Validation
+    $errors = array();
 
-    // Refresh values after save
-    $enabled = get_option('lps_enabled', true);
-    $mobile_width = get_option('lps_mobile_max_width', 768);
-    $title = get_option('lps_title');
-    $storage_key = get_option('lps_storage_key');
-    $redisplay_days = get_option('lps_redisplay_days', 0);
-    $page_rules = get_option('lps_page_rules', '');
-    $products = get_option('lps_products', '[]');
+    if (empty($popup['name'])) {
+        $errors[] = __('Popup name is required.', 'loop-product-selector');
+    }
+
+    if (empty($popup['page_rules'])) {
+        $errors[] = __('Page targeting rules are required to avoid conflicts between popups.', 'loop-product-selector');
+    }
+
+    if (empty($popup['products'])) {
+        $errors[] = __('At least one product is required.', 'loop-product-selector');
+    }
+
+    if (empty($errors)) {
+        // Save popup to array
+        $popups[$popup_id] = $popup;
+        update_option('lps_popups', $popups);
+
+        // Redirect back to list
+        wp_redirect(admin_url('admin.php?page=loop-product-selector&saved=1'));
+        exit;
+    } else {
+        echo '<div class="notice notice-error is-dismissible"><ul>';
+        foreach ($errors as $error) {
+            echo '<li>' . esc_html($error) . '</li>';
+        }
+        echo '</ul></div>';
+    }
 }
+
+// Convert products array to JSON for JavaScript
+$products_json = !empty($popup['products']) ? wp_json_encode($popup['products']) : '[]';
 ?>
 
 <div class="wrap lps-admin-wrap">
-    <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+    <h1><?php echo esc_html($page_title); ?></h1>
+
     <p class="description">
-        <?php _e('Configure the mobile product selector popup. This popup will appear on mobile devices based on your settings.', 'loop-product-selector'); ?>
+        <?php _e('Configure an individual product selector popup. Each popup can have different products and show on different pages.', 'loop-product-selector'); ?>
     </p>
 
     <form method="post" action="" id="lps-settings-form">
-        <?php wp_nonce_field('lps_settings_action', 'lps_settings_nonce'); ?>
+        <?php wp_nonce_field('lps_popup_edit_action', 'lps_popup_edit_nonce'); ?>
+        <input type="hidden" name="popup_id" value="<?php echo esc_attr($popup_id); ?>">
 
         <table class="form-table">
+            <!-- Popup Name -->
+            <tr>
+                <th scope="row">
+                    <label for="popup_name"><?php _e('Popup Name *', 'loop-product-selector'); ?></label>
+                </th>
+                <td>
+                    <input type="text" id="popup_name" name="popup_name" value="<?php echo esc_attr($popup['name']); ?>"
+                           class="regular-text" required>
+                    <p class="description">
+                        <?php _e('Internal name to identify this popup in the admin (e.g., "FurEver Product Popup").', 'loop-product-selector'); ?>
+                    </p>
+                </td>
+            </tr>
+
             <!-- Enable/Disable -->
             <tr>
                 <th scope="row">
-                    <label for="lps_enabled"><?php _e('Enable Popup', 'loop-product-selector'); ?></label>
+                    <label for="popup_enabled"><?php _e('Enable Popup', 'loop-product-selector'); ?></label>
                 </th>
                 <td>
                     <label class="lps-toggle">
-                        <input type="checkbox" id="lps_enabled" name="lps_enabled" value="1" <?php checked($enabled, true); ?>>
+                        <input type="checkbox" id="popup_enabled" name="popup_enabled" value="1" <?php checked($popup['enabled'], true); ?>>
                         <span class="lps-toggle-slider"></span>
                     </label>
                     <p class="description">
-                        <?php _e('Toggle to enable or disable the popup on your site.', 'loop-product-selector'); ?>
+                        <?php _e('Toggle to enable or disable this popup on your site.', 'loop-product-selector'); ?>
                     </p>
                 </td>
             </tr>
@@ -81,11 +150,11 @@ if (isset($_POST['lps_save_settings']) && check_admin_referer('lps_settings_acti
             <!-- Mobile Max Width -->
             <tr>
                 <th scope="row">
-                    <label for="lps_mobile_max_width"><?php _e('Mobile Max Width (px)', 'loop-product-selector'); ?></label>
+                    <label for="popup_mobile_max_width"><?php _e('Mobile Max Width (px)', 'loop-product-selector'); ?></label>
                 </th>
                 <td>
-                    <input type="number" id="lps_mobile_max_width" name="lps_mobile_max_width"
-                           value="<?php echo esc_attr($mobile_width); ?>" min="320" max="1024" step="1" class="small-text">
+                    <input type="number" id="popup_mobile_max_width" name="popup_mobile_max_width"
+                           value="<?php echo esc_attr($popup['mobile_max_width']); ?>" min="320" max="1024" step="1" class="small-text">
                     <p class="description">
                         <?php _e('Popup will only show on devices with screen width less than or equal to this value. Default: 768px', 'loop-product-selector'); ?>
                     </p>
@@ -95,10 +164,10 @@ if (isset($_POST['lps_save_settings']) && check_admin_referer('lps_settings_acti
             <!-- Popup Title -->
             <tr>
                 <th scope="row">
-                    <label for="lps_title"><?php _e('Popup Title', 'loop-product-selector'); ?></label>
+                    <label for="popup_title"><?php _e('Popup Title *', 'loop-product-selector'); ?></label>
                 </th>
                 <td>
-                    <input type="text" id="lps_title" name="lps_title" value="<?php echo esc_attr($title); ?>"
+                    <input type="text" id="popup_title" name="popup_title" value="<?php echo esc_attr($popup['title']); ?>"
                            class="regular-text" required>
                     <p class="description">
                         <?php _e('The question/title shown at the top of the popup.', 'loop-product-selector'); ?>
@@ -109,11 +178,11 @@ if (isset($_POST['lps_save_settings']) && check_admin_referer('lps_settings_acti
             <!-- Re-display Period -->
             <tr>
                 <th scope="row">
-                    <label for="lps_redisplay_days"><?php _e('Re-display After (days)', 'loop-product-selector'); ?></label>
+                    <label for="popup_redisplay_days"><?php _e('Re-display After (days)', 'loop-product-selector'); ?></label>
                 </th>
                 <td>
-                    <input type="number" id="lps_redisplay_days" name="lps_redisplay_days"
-                           value="<?php echo esc_attr($redisplay_days); ?>" min="0" max="3650" step="1" class="small-text">
+                    <input type="number" id="popup_redisplay_days" name="popup_redisplay_days"
+                           value="<?php echo esc_attr($popup['redisplay_days']); ?>" min="0" max="3650" step="1" class="small-text">
                     <p class="description">
                         <?php _e('Number of days before the popup can show again. Set to 0 to show only once (default). Set to 365 for yearly, 1825 for every 5 years, etc.', 'loop-product-selector'); ?>
                     </p>
@@ -123,12 +192,13 @@ if (isset($_POST['lps_save_settings']) && check_admin_referer('lps_settings_acti
             <!-- Page Targeting Rules -->
             <tr>
                 <th scope="row">
-                    <label for="lps_page_rules"><?php _e('Page Targeting Rules', 'loop-product-selector'); ?></label>
+                    <label for="popup_page_rules"><?php _e('Page Targeting Rules *', 'loop-product-selector'); ?></label>
                 </th>
                 <td>
-                    <textarea id="lps_page_rules" name="lps_page_rules" rows="5" class="large-text code"><?php echo esc_textarea($page_rules); ?></textarea>
+                    <textarea id="popup_page_rules" name="popup_page_rules" rows="5" class="large-text code" required><?php echo esc_textarea($popup['page_rules']); ?></textarea>
                     <p class="description">
-                        <?php _e('Show popup only on specific pages. Enter one rule per line. Leave empty to show on all pages.', 'loop-product-selector'); ?><br>
+                        <?php _e('Show popup only on specific pages. Enter one rule per line.', 'loop-product-selector'); ?><br>
+                        <strong style="color: #d63638;"><?php _e('⚠ REQUIRED for multi-popup to avoid conflicts!', 'loop-product-selector'); ?></strong><br>
                         <strong><?php _e('Examples:', 'loop-product-selector'); ?></strong><br>
                         • <code>/product/furever/</code> - Exact URL path match<br>
                         • <code>*furever*</code> - Contains "furever" anywhere<br>
@@ -141,13 +211,13 @@ if (isset($_POST['lps_save_settings']) && check_admin_referer('lps_settings_acti
             <!-- Storage Key -->
             <tr>
                 <th scope="row">
-                    <label for="lps_storage_key"><?php _e('Storage Key', 'loop-product-selector'); ?></label>
+                    <label for="popup_storage_key"><?php _e('Storage Key', 'loop-product-selector'); ?></label>
                 </th>
                 <td>
-                    <input type="text" id="lps_storage_key" name="lps_storage_key"
-                           value="<?php echo esc_attr($storage_key); ?>" class="regular-text" required>
+                    <input type="text" id="popup_storage_key" name="popup_storage_key"
+                           value="<?php echo esc_attr($popup['storage_key']); ?>" class="regular-text" required>
                     <p class="description">
-                        <?php _e('LocalStorage key used to track when popup was shown. Change this to reset for all users.', 'loop-product-selector'); ?>
+                        <?php _e('LocalStorage key used to track when popup was shown. Each popup needs a unique key. Change this to reset for all users.', 'loop-product-selector'); ?>
                     </p>
                 </td>
             </tr>
@@ -157,7 +227,7 @@ if (isset($_POST['lps_save_settings']) && check_admin_referer('lps_settings_acti
 
         <h2><?php _e('Products', 'loop-product-selector'); ?></h2>
         <p class="description">
-            <?php _e('Add the products you want to display in the popup. You can add 1 or more products.', 'loop-product-selector'); ?>
+            <?php _e('Add the products you want to display in this popup. You can add 1 or more products.', 'loop-product-selector'); ?>
         </p>
 
         <div id="lps-products-container">
@@ -169,25 +239,29 @@ if (isset($_POST['lps_save_settings']) && check_admin_referer('lps_settings_acti
             <?php _e('Add Product', 'loop-product-selector'); ?>
         </button>
 
-        <input type="hidden" name="lps_products" id="lps_products" value="<?php echo esc_attr($products); ?>">
+        <input type="hidden" name="popup_products" id="lps_products" value="<?php echo esc_attr($products_json); ?>">
 
         <hr>
 
         <p class="submit">
-            <button type="submit" name="lps_save_settings" class="button button-primary button-large">
-                <?php _e('Save Settings', 'loop-product-selector'); ?>
+            <button type="submit" name="popup_save" class="button button-primary button-large">
+                <?php _e('Save Popup', 'loop-product-selector'); ?>
             </button>
             <button type="button" class="button button-secondary button-large" id="lps-preview-button">
                 <span class="dashicons dashicons-visibility"></span>
                 <?php _e('Preview Popup', 'loop-product-selector'); ?>
             </button>
+            <a href="<?php echo admin_url('admin.php?page=loop-product-selector'); ?>" class="button button-link">
+                <?php _e('Cancel', 'loop-product-selector'); ?>
+            </a>
         </p>
     </form>
 
     <!-- Debug Info (remove in production) -->
     <div style="margin-top: 20px; padding: 10px; background: #f5f5f5; border: 1px solid #ddd; display: none;" id="lps-debug">
         <strong>Debug Info:</strong><br>
-        Products in DB: <code><?php echo esc_html($products); ?></code>
+        Popup ID: <code><?php echo esc_html($popup_id); ?></code><br>
+        Products in form: <code><?php echo esc_html($products_json); ?></code>
     </div>
 
     <script>

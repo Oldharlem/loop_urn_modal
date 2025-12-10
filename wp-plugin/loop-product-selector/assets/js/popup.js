@@ -3,6 +3,7 @@
  * Displays a minimalistic mobile-only popup for product selection
  *
  * Supports 1-N products dynamically from configuration
+ * Supports multiple popup configurations (shows first matching one)
  *
  * Usage: Include this script and configure via CONFIG object
  */
@@ -10,46 +11,59 @@
 (function() {
   'use strict';
 
-  // Configuration - can be overridden by setting window.URN_POPUP_CONFIG before loading this script
-  const CONFIG = window.URN_POPUP_CONFIG || {
-    storageKey: 'product_selection_shown',
-    mobileMaxWidth: 768,
-    title: 'Welk product zoekt u?',
-    products: [
-      {
-        title: 'Product 1',
-        subtitle: 'Description 1',
-        url: 'https://example.com/product1',
-        image: 'https://via.placeholder.com/400'
-      },
-      {
-        title: 'Product 2',
-        subtitle: 'Description 2',
-        url: 'https://example.com/product2',
-        image: 'https://via.placeholder.com/400'
-      }
-    ]
-  };
+  // Get configurations - support both single and multiple popups
+  let CONFIGS = [];
 
-  // Validate configuration
-  if (!CONFIG.products || !Array.isArray(CONFIG.products) || CONFIG.products.length === 0) {
-    console.error('URN Popup: No products configured');
+  // Check for multiple popups first (WordPress plugin multi-popup mode)
+  if (window.URN_POPUP_CONFIGS && Array.isArray(window.URN_POPUP_CONFIGS)) {
+    CONFIGS = window.URN_POPUP_CONFIGS;
+  }
+  // Fall back to single popup (backward compatibility or preview mode)
+  else if (window.URN_POPUP_CONFIG) {
+    CONFIGS = [window.URN_POPUP_CONFIG];
+  }
+  // No configuration found
+  else {
+    console.log('URN Popup: No configuration found');
+    return;
+  }
+
+  // Find first popup that should be shown
+  let CONFIG = null;
+
+  for (let i = 0; i < CONFIGS.length; i++) {
+    const config = CONFIGS[i];
+
+    // Validate configuration
+    if (!config.products || !Array.isArray(config.products) || config.products.length === 0) {
+      continue;
+    }
+
+    // Check if this popup should be shown
+    if (shouldShowPopup(config)) {
+      CONFIG = config;
+      break;
+    }
+  }
+
+  // No popup should be shown
+  if (!CONFIG) {
     return;
   }
 
   // Check if popup should be shown
-  function shouldShowPopup() {
+  function shouldShowPopup(config) {
     // Check if mobile device
-    if (window.innerWidth > CONFIG.mobileMaxWidth) {
+    if (window.innerWidth > config.mobileMaxWidth) {
       return false;
     }
 
     // Check if already shown and handle time-based re-display
-    const lastShown = localStorage.getItem(CONFIG.storageKey);
+    const lastShown = localStorage.getItem(config.storageKey);
 
     if (lastShown) {
       // If redisplayDays is 0, show only once
-      if (!CONFIG.redisplayDays || CONFIG.redisplayDays === 0) {
+      if (!config.redisplayDays || config.redisplayDays === 0) {
         return false;
       }
 
@@ -58,7 +72,7 @@
       const now = Date.now();
       const daysSinceShown = (now - lastShownTime) / (1000 * 60 * 60 * 24);
 
-      if (daysSinceShown < CONFIG.redisplayDays) {
+      if (daysSinceShown < config.redisplayDays) {
         return false;
       }
     }
@@ -381,10 +395,6 @@
 
   // Initialize
   function init() {
-    if (!shouldShowPopup()) {
-      return;
-    }
-
     injectStyles();
 
     // Show modal after a brief delay to ensure page is loaded
