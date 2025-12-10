@@ -3,7 +3,7 @@
  * Plugin Name: Loop Magic Popup Creator
  * Plugin URI: https://github.com/Oldharlem/loop_urn_modal
  * Description: Create unlimited mobile popups with custom products and page targeting. Perfect for product selection, promotions, and more.
- * Version: 2.0.5
+ * Version: 2.0.6
  * Author: Loop Biotech
  * Author URI: https://loop-biotech.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LPS_VERSION', '2.0.5');
+define('LPS_VERSION', '2.0.6');
 define('LPS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -186,12 +186,14 @@ class Loop_Product_Selector {
      * Check if current page matches targeting rules
      *
      * Rules behavior:
-     * - If rule contains '?', match against full URL with query strings
+     * - If rule contains '?', match path AND check that all query params in rule exist in URL
      * - If rule doesn't contain '?', match against path only (ignores query strings)
+     * - Wildcards (*) work in both path and query parameter values
      *
      * Examples:
-     * - /nl/dpg-discoverybox/ → matches any URL with that path
-     * - /nl/dpg-discoverybox/?utm_source=volkskrant* → matches only with that UTM
+     * - /nl/dpg-discoverybox/ → matches any URL with that path (ignores query params)
+     * - /nl/dpg-discoverybox/?utm_source=volkskrant → matches if path matches AND utm_source=volkskrant exists
+     * - /nl/dpg-discoverybox/?utm_source=volkskrant&utm_campaign=* → matches any campaign with that source
      */
     private function matches_page_rules($rules) {
         // If no rules, show on all pages
@@ -200,11 +202,11 @@ class Loop_Product_Selector {
         }
 
         $current_url = $_SERVER['REQUEST_URI'];
-        $full_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 
-        // Get URLs without query strings for path-only matching
+        // Parse current URL
         $current_path = strtok($current_url, '?');
-        $full_url_path = strtok($full_url, '?');
+        $current_query_string = parse_url($current_url, PHP_URL_QUERY) ?? '';
+        parse_str($current_query_string, $current_params);
 
         $rules_array = array_filter(array_map('trim', explode("\n", $rules)));
 
@@ -218,37 +220,94 @@ class Loop_Product_Selector {
             // Determine if rule includes query string matching
             $rule_has_query = strpos($rule, '?') !== false;
 
-            // Convert wildcard pattern to regex
-            // Escape ? for regex, then convert * to .*
-            $pattern = str_replace(
-                array('?', '*', '/'),
-                array('\\?', '.*', '\\/'),
-                $rule
-            );
-            $pattern = '/^' . $pattern . '$/i';
-
             if ($rule_has_query) {
-                // Rule has query params - match against full URLs only
-                if (preg_match($pattern, $current_url) || preg_match($pattern, $full_url)) {
-                    return true;
+                // Split rule into path and query
+                $rule_parts = explode('?', $rule, 2);
+                $rule_path = $rule_parts[0];
+                $rule_query_string = $rule_parts[1] ?? '';
+                parse_str($rule_query_string, $rule_params);
+
+                // First check if path matches (with wildcard support)
+                if (!$this->path_matches($rule_path, $current_path)) {
+                    continue;
                 }
-                // Also check exact match
-                if ($rule === $current_url || $rule === $full_url) {
+
+                // Then check if all rule params exist in current URL params
+                if ($this->params_match($rule_params, $current_params)) {
                     return true;
                 }
             } else {
-                // Rule has no query params - match against path only (ignore query strings)
-                if (preg_match($pattern, $current_path) || preg_match($pattern, $full_url_path)) {
-                    return true;
-                }
-                // Also check exact match
-                if ($rule === $current_path || $rule === $full_url_path) {
+                // Rule has no query params - match against path only
+                if ($this->path_matches($rule, $current_path)) {
                     return true;
                 }
             }
         }
 
         return false;
+    }
+
+    /**
+     * Check if a path pattern matches a path (supports wildcards)
+     */
+    private function path_matches($pattern, $path) {
+        // Normalize trailing slashes - treat /path and /path/ as equivalent
+        $pattern = rtrim($pattern, '/');
+        $path = rtrim($path, '/');
+
+        // Exact match
+        if ($pattern === $path) {
+            return true;
+        }
+
+        // Convert wildcard pattern to regex
+        $regex = str_replace(
+            array('*', '/'),
+            array('.*', '\\/'),
+            $pattern
+        );
+        $regex = '/^' . $regex . '$/i';
+
+        return (bool) preg_match($regex, $path);
+    }
+
+    /**
+     * Check if all rule params exist in URL params (supports wildcards in values)
+     */
+    private function params_match($rule_params, $url_params) {
+        foreach ($rule_params as $key => $value) {
+            // Check if param exists in URL
+            if (!isset($url_params[$key])) {
+                return false;
+            }
+
+            // If rule value is wildcard or empty, any value matches
+            if ($value === '*' || $value === '') {
+                continue;
+            }
+
+            // Check if value matches (with wildcard support)
+            $url_value = $url_params[$key];
+
+            // Exact match
+            if ($value === $url_value) {
+                continue;
+            }
+
+            // Wildcard match in value
+            if (strpos($value, '*') !== false) {
+                $regex = '/^' . str_replace('*', '.*', preg_quote($value, '/')) . '$/i';
+                $regex = str_replace('\\*', '.*', $regex); // Fix the escaped wildcard
+                if (preg_match($regex, $url_value)) {
+                    continue;
+                }
+            }
+
+            // No match
+            return false;
+        }
+
+        return true;
     }
 
     /**
