@@ -150,10 +150,16 @@ class Loop_Product_Selector {
      * Enqueue admin scripts and styles
      */
     public function enqueue_admin_scripts($hook) {
+        // Debug: Log the hook value
+        error_log('LPS Admin Scripts Hook: ' . $hook);
+
         // Load on both list and edit pages
         if ('settings_page_loop-product-selector' !== $hook && 'admin_page_loop-product-selector-edit' !== $hook) {
+            error_log('LPS Admin Scripts: Hook did not match, not loading scripts');
             return;
         }
+
+        error_log('LPS Admin Scripts: Loading scripts for hook: ' . $hook);
 
         wp_enqueue_media();
         wp_enqueue_style('lps-admin', LPS_PLUGIN_URL . 'admin/admin-styles.css', array(), LPS_VERSION);
