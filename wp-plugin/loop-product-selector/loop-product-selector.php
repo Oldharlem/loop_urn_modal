@@ -278,6 +278,7 @@ class Loop_Product_Selector {
         $config = array(
             'storageKey' => 'preview_' . time(),
             'mobileMaxWidth' => intval($_POST['mobileMaxWidth']),
+            'showOnDesktop' => !empty($_POST['showOnDesktop']),
             'title' => sanitize_text_field($_POST['title']),
             'products' => json_decode(stripslashes($_POST['products']), true),
             'redisplayDays' => 0

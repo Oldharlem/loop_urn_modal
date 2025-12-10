@@ -217,7 +217,8 @@
         const config = {
             storageKey: 'preview_' + Date.now(),
             mobileMaxWidth: parseInt($('#lps_mobile_max_width').val()) || 768,
-            title: $('#lps_title').val() || 'Product Selection',
+            showOnDesktop: $('#popup_show_on_desktop').is(':checked'),
+            title: $('#lps_title').val() || $('#popup_title').val() || 'Product Selection',
             products: getProducts()
         };
 
