@@ -246,7 +246,8 @@
             showOnDesktop: isChecked,
             title: titleValue || 'Product Selection',
             products: products,
-            redisplayDays: 0
+            redisplayDays: 0,
+            isPreview: true  // Always show in admin preview, bypass device/localStorage checks
         };
 
         console.log('===== FINAL PREVIEW CONFIG =====');

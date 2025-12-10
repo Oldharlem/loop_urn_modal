@@ -69,8 +69,15 @@
     console.log('Loop Magic Popup: Checking if should show', {
       showOnDesktop: config.showOnDesktop,
       windowWidth: window.innerWidth,
+      isPreview: config.isPreview || false,
       debug: config._debug || 'No debug info available'
     });
+
+    // Admin preview mode - always show the popup regardless of device/localStorage
+    if (config.isPreview) {
+      console.log('Loop Magic Popup: Preview mode - showing popup');
+      return true;
+    }
 
     // Check if mobile device (unless showOnDesktop is enabled)
     // Mobile max width is hardcoded to 768px
