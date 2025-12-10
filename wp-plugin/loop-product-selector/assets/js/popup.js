@@ -53,8 +53,16 @@
 
   // Check if popup should be shown
   function shouldShowPopup(config) {
+    // Debug logging
+    console.log('Loop Magic Popup: Checking if should show', {
+      showOnDesktop: config.showOnDesktop,
+      windowWidth: window.innerWidth,
+      mobileMaxWidth: config.mobileMaxWidth
+    });
+
     // Check if mobile device (unless showOnDesktop is enabled)
     if (!config.showOnDesktop && window.innerWidth > config.mobileMaxWidth) {
+      console.log('Loop Magic Popup: Skipping - desktop and showOnDesktop is false');
       return false;
     }
 

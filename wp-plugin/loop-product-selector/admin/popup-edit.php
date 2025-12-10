@@ -18,6 +18,10 @@ $is_edit = $popup_id && isset($popups[$popup_id]);
 // Load existing popup data or set defaults
 if ($is_edit) {
     $popup = $popups[$popup_id];
+    // Ensure show_on_desktop exists for backwards compatibility
+    if (!isset($popup['show_on_desktop'])) {
+        $popup['show_on_desktop'] = false;
+    }
     $page_title = __('Edit Magic Popup', 'loop-product-selector');
 } else {
     // Generate new popup ID
@@ -37,70 +41,15 @@ if ($is_edit) {
     $page_title = __('Add New Magic Popup', 'loop-product-selector');
 }
 
-// Handle form submission
-if (isset($_POST['popup_save']) && check_admin_referer('lps_popup_edit_action', 'lps_popup_edit_nonce')) {
-    // Sanitize basic settings
-    $popup['id'] = $popup_id;
-    $popup['name'] = sanitize_text_field($_POST['popup_name']);
-    $popup['enabled'] = isset($_POST['popup_enabled']);
-    $popup['title'] = sanitize_text_field($_POST['popup_title']);
-    $popup['mobile_max_width'] = absint($_POST['popup_mobile_max_width']);
-    $popup['show_on_desktop'] = isset($_POST['popup_show_on_desktop']);
-    $popup['redisplay_days'] = absint($_POST['popup_redisplay_days']);
-    $popup['page_rules'] = sanitize_textarea_field($_POST['popup_page_rules']);
-    $popup['storage_key'] = sanitize_key($_POST['popup_storage_key']);
-
-    // Sanitize and save products
-    $products_json = isset($_POST['popup_products']) ? wp_unslash($_POST['popup_products']) : '[]';
-    $products_array = json_decode($products_json, true);
-
-    if (is_array($products_array)) {
-        $sanitized = array();
-        foreach ($products_array as $product) {
-            if (isset($product['title']) && isset($product['url']) && isset($product['image'])) {
-                $sanitized[] = array(
-                    'title' => sanitize_text_field($product['title']),
-                    'subtitle' => isset($product['subtitle']) ? sanitize_text_field($product['subtitle']) : '',
-                    'url' => esc_url_raw($product['url']),
-                    'image' => esc_url_raw($product['image'])
-                );
-            }
-        }
-        $popup['products'] = $sanitized;
-    } else {
-        $popup['products'] = array();
+// Check for errors from form submission
+$errors = get_transient('lps_popup_errors_' . get_current_user_id());
+if ($errors && isset($_GET['error'])) {
+    delete_transient('lps_popup_errors_' . get_current_user_id());
+    echo '<div class="notice notice-error is-dismissible"><ul>';
+    foreach ($errors as $error) {
+        echo '<li>' . esc_html($error) . '</li>';
     }
-
-    // Validation
-    $errors = array();
-
-    if (empty($popup['name'])) {
-        $errors[] = __('Popup name is required.', 'loop-product-selector');
-    }
-
-    if (empty($popup['page_rules'])) {
-        $errors[] = __('Page targeting rules are required to avoid conflicts between popups.', 'loop-product-selector');
-    }
-
-    if (empty($popup['products'])) {
-        $errors[] = __('At least one product is required.', 'loop-product-selector');
-    }
-
-    if (empty($errors)) {
-        // Save popup to array
-        $popups[$popup_id] = $popup;
-        update_option('lps_popups', $popups);
-
-        // Redirect back to list
-        wp_redirect(admin_url('admin.php?page=loop-product-selector&saved=1'));
-        exit;
-    } else {
-        echo '<div class="notice notice-error is-dismissible"><ul>';
-        foreach ($errors as $error) {
-            echo '<li>' . esc_html($error) . '</li>';
-        }
-        echo '</ul></div>';
-    }
+    echo '</ul></div>';
 }
 
 // Convert products array to JSON for JavaScript
@@ -114,8 +63,9 @@ $products_json = !empty($popup['products']) ? wp_json_encode($popup['products'])
         <?php _e('Configure your magic popup with custom products and page targeting. Each popup can display different products on different pages.', 'loop-product-selector'); ?>
     </p>
 
-    <form method="post" action="" id="lps-settings-form">
+    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" id="lps-settings-form">
         <?php wp_nonce_field('lps_popup_edit_action', 'lps_popup_edit_nonce'); ?>
+        <input type="hidden" name="action" value="lps_save_popup">
         <input type="hidden" name="popup_id" value="<?php echo esc_attr($popup_id); ?>">
 
         <table class="form-table">

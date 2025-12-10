@@ -43,6 +43,9 @@ class Loop_Product_Selector {
 
         // AJAX handlers
         add_action('wp_ajax_lps_preview', array($this, 'ajax_preview'));
+
+        // Form handlers
+        add_action('admin_post_lps_save_popup', array($this, 'handle_save_popup'));
     }
 
     /**
@@ -281,6 +284,98 @@ class Loop_Product_Selector {
         );
 
         wp_send_json_success($config);
+    }
+
+    /**
+     * Handle popup save form submission
+     */
+    public function handle_save_popup() {
+        // Security checks
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized');
+        }
+
+        check_admin_referer('lps_popup_edit_action', 'lps_popup_edit_nonce');
+
+        // Get all popups
+        $popups = get_option('lps_popups', array());
+
+        // Get popup ID
+        $popup_id = isset($_POST['popup_id']) ? sanitize_key($_POST['popup_id']) : null;
+
+        // Determine if editing or creating
+        $is_edit = $popup_id && isset($popups[$popup_id]);
+
+        // Load or create popup array
+        if ($is_edit) {
+            $popup = $popups[$popup_id];
+        } else {
+            $popup = array('id' => $popup_id);
+        }
+
+        // Sanitize basic settings
+        $popup['id'] = $popup_id;
+        $popup['name'] = sanitize_text_field($_POST['popup_name']);
+        $popup['enabled'] = isset($_POST['popup_enabled']);
+        $popup['title'] = sanitize_text_field($_POST['popup_title']);
+        $popup['mobile_max_width'] = absint($_POST['popup_mobile_max_width']);
+        $popup['show_on_desktop'] = isset($_POST['popup_show_on_desktop']);
+        $popup['redisplay_days'] = absint($_POST['popup_redisplay_days']);
+        $popup['page_rules'] = sanitize_textarea_field($_POST['popup_page_rules']);
+        $popup['storage_key'] = sanitize_key($_POST['popup_storage_key']);
+
+        // Sanitize and save products
+        $products_json = isset($_POST['popup_products']) ? wp_unslash($_POST['popup_products']) : '[]';
+        $products_array = json_decode($products_json, true);
+
+        if (is_array($products_array)) {
+            $sanitized = array();
+            foreach ($products_array as $product) {
+                if (isset($product['title']) && isset($product['url']) && isset($product['image'])) {
+                    $sanitized[] = array(
+                        'title' => sanitize_text_field($product['title']),
+                        'subtitle' => isset($product['subtitle']) ? sanitize_text_field($product['subtitle']) : '',
+                        'url' => esc_url_raw($product['url']),
+                        'image' => esc_url_raw($product['image'])
+                    );
+                }
+            }
+            $popup['products'] = $sanitized;
+        } else {
+            $popup['products'] = array();
+        }
+
+        // Validation
+        $errors = array();
+
+        if (empty($popup['name'])) {
+            $errors[] = 'Popup name is required.';
+        }
+
+        if (empty($popup['page_rules'])) {
+            $errors[] = 'Page targeting rules are required to avoid conflicts between popups.';
+        }
+
+        if (empty($popup['products'])) {
+            $errors[] = 'At least one product is required.';
+        }
+
+        if (!empty($errors)) {
+            // Store errors in transient
+            set_transient('lps_popup_errors_' . get_current_user_id(), $errors, 60);
+
+            // Redirect back to edit page
+            wp_redirect(admin_url('admin.php?page=loop-product-selector-edit&popup_id=' . $popup_id . '&error=1'));
+            exit;
+        }
+
+        // Save popup to array
+        $popups[$popup_id] = $popup;
+        update_option('lps_popups', $popups);
+
+        // Redirect back to list with success message
+        wp_redirect(admin_url('admin.php?page=loop-product-selector&saved=1'));
+        exit;
     }
 
     /**
