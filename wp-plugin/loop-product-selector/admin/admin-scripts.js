@@ -5,9 +5,15 @@
 (function($) {
     'use strict';
 
+    console.log('===== ADMIN SCRIPTS LOADED =====');
+    console.log('Current URL:', window.location.href);
+    console.log('jQuery available:', typeof $ !== 'undefined');
+
     let productIndex = 0;
 
     $(document).ready(function() {
+        console.log('===== ADMIN SCRIPTS READY =====');
+        console.log('Preview button exists:', $('#lps-preview-button').length > 0);
         // Initialize products from saved data
         const savedProductsJson = $('#lps_products').val();
         let savedProducts = [];
@@ -94,6 +100,7 @@
 
         // Preview button
         $('#lps-preview-button').on('click', function(e) {
+            console.log('===== PREVIEW BUTTON CLICKED =====');
             e.preventDefault();
             showPreview();
         });
