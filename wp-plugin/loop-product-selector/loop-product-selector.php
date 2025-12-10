@@ -236,12 +236,21 @@ class Loop_Product_Selector {
             }
 
             // This popup should be shown
+            $show_on_desktop_value = (bool) (!empty($popup['show_on_desktop']));
+
             $matching_popups[] = array(
                 'storageKey' => $popup['storage_key'],
-                'showOnDesktop' => (bool) (!empty($popup['show_on_desktop'])),
+                'showOnDesktop' => $show_on_desktop_value,
                 'title' => $popup['title'],
                 'products' => $popup['products'],
-                'redisplayDays' => intval($popup['redisplay_days'])
+                'redisplayDays' => intval($popup['redisplay_days']),
+                // Debug info
+                '_debug' => array(
+                    'popup_id' => $popup_id,
+                    'raw_show_on_desktop' => isset($popup['show_on_desktop']) ? $popup['show_on_desktop'] : 'NOT_SET',
+                    'raw_type' => isset($popup['show_on_desktop']) ? gettype($popup['show_on_desktop']) : 'N/A',
+                    'processed_value' => $show_on_desktop_value
+                )
             );
         }
 

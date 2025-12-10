@@ -56,7 +56,8 @@
     // Debug logging
     console.log('Loop Magic Popup: Checking if should show', {
       showOnDesktop: config.showOnDesktop,
-      windowWidth: window.innerWidth
+      windowWidth: window.innerWidth,
+      debug: config._debug || 'No debug info available'
     });
 
     // Check if mobile device (unless showOnDesktop is enabled)
