@@ -3,7 +3,7 @@
  * Plugin Name: Loop Product Selector
  * Plugin URI: https://github.com/Oldharlem/loop_urn_modal
  * Description: Mobile-only popup that displays product selection options. Fully configurable through WordPress admin.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Loop Biotech
  * Author URI: https://loop-biotech.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LPS_VERSION', '1.0.0');
+define('LPS_VERSION', '1.1.0');
 define('LPS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('LPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -76,7 +76,7 @@ class Loop_Product_Selector {
 
         register_setting('lps_settings', 'lps_title', array(
             'type' => 'string',
-            'default' => 'In welke urn bent u geïnteresseerd?',
+            'default' => 'Which product are you interested in?',
             'sanitize_callback' => 'sanitize_text_field'
         ));
 
@@ -84,6 +84,18 @@ class Loop_Product_Selector {
             'type' => 'string',
             'default' => 'product_selection_shown',
             'sanitize_callback' => 'sanitize_key'
+        ));
+
+        register_setting('lps_settings', 'lps_redisplay_days', array(
+            'type' => 'integer',
+            'default' => 0,
+            'sanitize_callback' => 'absint'
+        ));
+
+        register_setting('lps_settings', 'lps_page_rules', array(
+            'type' => 'string',
+            'default' => '',
+            'sanitize_callback' => 'sanitize_textarea_field'
         ));
 
         register_setting('lps_settings', 'lps_products', array(
@@ -134,8 +146,54 @@ class Loop_Product_Selector {
 
         wp_localize_script('lps-admin', 'lpsAdmin', array(
             'ajaxUrl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('lps_preview_nonce')
+            'nonce' => wp_create_nonce('lps_preview_nonce'),
+            'pluginUrl' => LPS_PLUGIN_URL
         ));
+    }
+
+    /**
+     * Check if current page matches targeting rules
+     */
+    private function matches_page_rules() {
+        $rules = get_option('lps_page_rules', '');
+
+        // If no rules, show on all pages
+        if (empty(trim($rules))) {
+            return true;
+        }
+
+        $current_url = $_SERVER['REQUEST_URI'];
+        $full_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+
+        $rules_array = array_filter(array_map('trim', explode("\n", $rules)));
+
+        foreach ($rules_array as $rule) {
+            $rule = trim($rule);
+
+            if (empty($rule)) {
+                continue;
+            }
+
+            // Convert wildcard pattern to regex
+            $pattern = str_replace(
+                array('*', '/'),
+                array('.*', '\/'),
+                $rule
+            );
+            $pattern = '/^' . $pattern . '$/i';
+
+            // Check against both paths
+            if (preg_match($pattern, $current_url) || preg_match($pattern, $full_url)) {
+                return true;
+            }
+
+            // Also check exact match
+            if ($rule === $current_url || $rule === $full_url) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -144,6 +202,11 @@ class Loop_Product_Selector {
     public function enqueue_frontend_scripts() {
         // Check if plugin is enabled
         if (!get_option('lps_enabled', true)) {
+            return;
+        }
+
+        // Check page targeting rules
+        if (!$this->matches_page_rules()) {
             return;
         }
 
@@ -168,8 +231,9 @@ class Loop_Product_Selector {
         $config = array(
             'storageKey' => get_option('lps_storage_key', 'product_selection_shown'),
             'mobileMaxWidth' => intval(get_option('lps_mobile_max_width', 768)),
-            'title' => get_option('lps_title', 'In welke urn bent u geïnteresseerd?'),
-            'products' => $products
+            'title' => get_option('lps_title', 'Which product are you interested in?'),
+            'products' => $products,
+            'redisplayDays' => intval(get_option('lps_redisplay_days', 0))
         );
 
         wp_localize_script('lps-popup', 'URN_POPUP_CONFIG', $config);
@@ -189,7 +253,8 @@ class Loop_Product_Selector {
             'storageKey' => 'preview_' . time(),
             'mobileMaxWidth' => intval($_POST['mobileMaxWidth']),
             'title' => sanitize_text_field($_POST['title']),
-            'products' => json_decode(stripslashes($_POST['products']), true)
+            'products' => json_decode(stripslashes($_POST['products']), true),
+            'redisplayDays' => 0
         );
 
         wp_send_json_success($config);
@@ -206,8 +271,10 @@ class Loop_Product_Selector {
         // Get current settings
         $enabled = get_option('lps_enabled', true);
         $mobile_width = get_option('lps_mobile_max_width', 768);
-        $title = get_option('lps_title', 'In welke urn bent u geïnteresseerd?');
+        $title = get_option('lps_title', 'Which product are you interested in?');
         $storage_key = get_option('lps_storage_key', 'product_selection_shown');
+        $redisplay_days = get_option('lps_redisplay_days', 0);
+        $page_rules = get_option('lps_page_rules', '');
         $products = get_option('lps_products', '[]');
 
         include LPS_PLUGIN_DIR . 'admin/admin-page.php';
@@ -225,22 +292,24 @@ register_activation_hook(__FILE__, function() {
     // Set default options
     add_option('lps_enabled', true);
     add_option('lps_mobile_max_width', 768);
-    add_option('lps_title', 'In welke urn bent u geïnteresseerd?');
+    add_option('lps_title', 'Which product are you interested in?');
     add_option('lps_storage_key', 'product_selection_shown');
+    add_option('lps_redisplay_days', 0);
+    add_option('lps_page_rules', '');
 
-    // Set default products (Loop Biotech example)
+    // Set default products (generic examples)
     $default_products = array(
         array(
-            'title' => 'Loop FurEver™',
-            'subtitle' => 'Voor huisdieren',
-            'url' => 'https://loop-biotech.com/nl/product/furever/',
-            'image' => 'https://loop-biotech.com/wp-content/uploads/2025/09/Ontwerp-zonder-titel-15-1024x791.png'
+            'title' => 'Product 1',
+            'subtitle' => 'First option',
+            'url' => home_url('/product-1/'),
+            'image' => 'https://via.placeholder.com/400x400/cccccc/666666?text=Product+1'
         ),
         array(
-            'title' => 'Loop EarthRise™',
-            'subtitle' => 'Voor mensen',
-            'url' => 'https://loop-biotech.com/nl/product/earthrise/',
-            'image' => 'https://loop-biotech.com/wp-content/uploads/2025/03/loop_earthrise-1024x687.webp'
+            'title' => 'Product 2',
+            'subtitle' => 'Second option',
+            'url' => home_url('/product-2/'),
+            'image' => 'https://via.placeholder.com/400x400/cccccc/666666?text=Product+2'
         )
     );
 

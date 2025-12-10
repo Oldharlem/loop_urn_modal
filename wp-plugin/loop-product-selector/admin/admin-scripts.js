@@ -9,13 +9,23 @@
 
     $(document).ready(function() {
         // Initialize products from saved data
-        const savedProducts = JSON.parse($('#lps_products').val() || '[]');
-        savedProducts.forEach(product => {
-            addProduct(product);
-        });
+        const savedProductsJson = $('#lps_products').val();
+        let savedProducts = [];
 
-        // If no products, add one empty product
-        if (savedProducts.length === 0) {
+        try {
+            savedProducts = savedProductsJson ? JSON.parse(savedProductsJson) : [];
+        } catch (e) {
+            console.error('Error parsing saved products:', e);
+            savedProducts = [];
+        }
+
+        // Render saved products
+        if (savedProducts.length > 0) {
+            savedProducts.forEach(product => {
+                addProduct(product);
+            });
+        } else {
+            // Add one empty product if none exist
             addProduct({});
         }
 
@@ -26,14 +36,35 @@
 
         // Remove product (delegated event)
         $('#lps-products-container').on('click', '.lps-remove-product', function() {
+            const $container = $('#lps-products-container');
+
+            // Don't allow removing the last product
+            if ($container.find('.lps-product-item').length <= 1) {
+                alert('You must have at least one product.');
+                return;
+            }
+
             $(this).closest('.lps-product-item').remove();
             updateProductNumbers();
             updateHiddenField();
         });
 
         // Update hidden field when inputs change
-        $('#lps-products-container').on('input', 'input', function() {
+        $('#lps-products-container').on('input change', 'input', function() {
             updateHiddenField();
+        });
+
+        // Update image preview when URL changes
+        $('#lps-products-container').on('input', '.lps-product-image', function() {
+            const $input = $(this);
+            const url = $input.val().trim();
+            const $preview = $input.closest('.lps-product-fields').find('.lps-image-preview');
+
+            if (url) {
+                $preview.html('<img src="' + url + '" alt="Preview" onerror="this.style.display=\'none\'">');
+            } else {
+                $preview.empty();
+            }
         });
 
         // Media uploader
@@ -54,9 +85,8 @@
 
             frame.on('select', function() {
                 const attachment = frame.state().get('selection').first().toJSON();
-                imageInput.val(attachment.url);
+                imageInput.val(attachment.url).trigger('change');
                 imagePreview.html('<img src="' + attachment.url + '" alt="Preview">');
-                updateHiddenField();
             });
 
             frame.open();
@@ -68,40 +98,87 @@
             showPreview();
         });
 
-        // Form validation
+        // Form validation before submit
         $('#lps-settings-form').on('submit', function(e) {
+            // Update hidden field one last time before submit
+            updateHiddenField();
+
             const products = getProducts();
 
             if (products.length === 0) {
-                alert('Please add at least one product.');
+                alert('Please add at least one product with all required fields filled.');
                 e.preventDefault();
                 return false;
             }
 
+            // Validate each product
             for (let i = 0; i < products.length; i++) {
-                if (!products[i].title || !products[i].url || !products[i].image) {
-                    alert('Please fill in all required fields for Product ' + (i + 1));
+                const product = products[i];
+                if (!product.title || !product.url || !product.image) {
+                    alert('Please fill in all required fields (Title, URL, Image) for Product ' + (i + 1));
                     e.preventDefault();
                     return false;
                 }
             }
+
+            // Update hidden field again with validated products
+            $('#lps_products').val(JSON.stringify(products));
         });
     });
 
     function addProduct(product) {
-        const template = $('#lps-product-template').html();
-        const html = template
-            .replace(/\{\{index\}\}/g, productIndex)
-            .replace(/\{\{number\}\}/g, productIndex + 1)
-            .replace(/\{\{title\}\}/g, product.title || '')
-            .replace(/\{\{subtitle\}\}/g, product.subtitle || '')
-            .replace(/\{\{url\}\}/g, product.url || '')
-            .replace(/\{\{image\}\}/g, product.image || '')
-            .replace(/\{\{#if image\}\}(.*?)\{\{\/if\}\}/gs, product.image ?
-                '<img src="' + product.image + '" alt="Preview">' : '');
+        product = product || {};
+
+        const html = `
+            <div class="lps-product-item" data-index="${productIndex}">
+                <div class="lps-product-header">
+                    <h3>Product <span class="lps-product-number">${productIndex + 1}</span></h3>
+                    <button type="button" class="button button-link-delete lps-remove-product">
+                        <span class="dashicons dashicons-trash"></span>
+                        Remove
+                    </button>
+                </div>
+                <div class="lps-product-fields">
+                    <div class="lps-field">
+                        <label>Product Title *</label>
+                        <input type="text" class="regular-text lps-product-title" value="${escapeHtml(product.title || '')}" required>
+                    </div>
+                    <div class="lps-field">
+                        <label>Subtitle (optional)</label>
+                        <input type="text" class="regular-text lps-product-subtitle" value="${escapeHtml(product.subtitle || '')}">
+                    </div>
+                    <div class="lps-field">
+                        <label>Product URL *</label>
+                        <input type="url" class="regular-text lps-product-url" value="${escapeHtml(product.url || '')}" required>
+                    </div>
+                    <div class="lps-field">
+                        <label>Image URL *</label>
+                        <div class="lps-image-field">
+                            <input type="url" class="regular-text lps-product-image" value="${escapeHtml(product.image || '')}" required>
+                            <button type="button" class="button lps-upload-image">Upload</button>
+                        </div>
+                        <div class="lps-image-preview">
+                            ${product.image ? '<img src="' + escapeHtml(product.image) + '" alt="Preview">' : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
 
         $('#lps-products-container').append(html);
         productIndex++;
+        updateHiddenField();
+    }
+
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
     }
 
     function updateProductNumbers() {
@@ -122,6 +199,7 @@
                 image: $item.find('.lps-product-image').val().trim()
             };
 
+            // Only add if required fields are filled
             if (product.title && product.url && product.image) {
                 products.push(product);
             }
@@ -154,14 +232,12 @@
         // Set window config
         window.URN_POPUP_CONFIG = config;
 
+        // Remove any existing preview script
+        $('script[src*="popup.js"]').remove();
+
         // Load preview script
         const script = document.createElement('script');
         script.src = lpsAdmin.pluginUrl + 'assets/js/popup.js?v=' + Date.now();
-        script.onload = function() {
-            // Override shouldShowPopup to always show in preview
-            console.log('Preview loaded with config:', config);
-        };
-
         document.body.appendChild(script);
     }
 

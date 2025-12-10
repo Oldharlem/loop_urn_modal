@@ -39,14 +39,28 @@
 
   // Check if popup should be shown
   function shouldShowPopup() {
-    // Check if already shown
-    if (localStorage.getItem(CONFIG.storageKey)) {
-      return false;
-    }
-
     // Check if mobile device
     if (window.innerWidth > CONFIG.mobileMaxWidth) {
       return false;
+    }
+
+    // Check if already shown and handle time-based re-display
+    const lastShown = localStorage.getItem(CONFIG.storageKey);
+
+    if (lastShown) {
+      // If redisplayDays is 0, show only once
+      if (!CONFIG.redisplayDays || CONFIG.redisplayDays === 0) {
+        return false;
+      }
+
+      // Check if enough time has passed
+      const lastShownTime = parseInt(lastShown);
+      const now = Date.now();
+      const daysSinceShown = (now - lastShownTime) / (1000 * 60 * 60 * 24);
+
+      if (daysSinceShown < CONFIG.redisplayDays) {
+        return false;
+      }
     }
 
     return true;
@@ -361,7 +375,8 @@
 
   // Mark as shown in localStorage
   function markAsShown() {
-    localStorage.setItem(CONFIG.storageKey, 'true');
+    // Store timestamp instead of just 'true' for time-based re-display
+    localStorage.setItem(CONFIG.storageKey, Date.now().toString());
   }
 
   // Initialize
