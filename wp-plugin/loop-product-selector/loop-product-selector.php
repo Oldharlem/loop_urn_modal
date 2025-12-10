@@ -229,6 +229,11 @@ class Loop_Product_Selector {
      * Enqueue frontend scripts
      */
     public function enqueue_frontend_scripts() {
+        // Don't load on admin pages
+        if (is_admin()) {
+            return;
+        }
+
         // Get all popups
         $popups = get_option('lps_popups', array());
 
