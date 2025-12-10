@@ -161,21 +161,6 @@ $products_json = !empty($popup['products']) ? wp_json_encode($popup['products'])
                         • <code>*/product/*</code> - Any product page<br>
                         • <code>https://example.com/specific-page</code> - Full URL match
                     </p>
-
-                    <!-- Page Targeting Test Tool -->
-                    <div class="lps-page-rules-tester">
-                        <h4><?php _e('🔍 Test Your Targeting Rules', 'loop-product-selector'); ?></h4>
-                        <div class="lps-test-url-field">
-                            <input type="text" id="lps-test-url" class="regular-text" placeholder="Enter URL to test (e.g., /product/furever/)">
-                            <button type="button" id="lps-use-current-url" class="button button-secondary">
-                                <?php _e('Use Current Page', 'loop-product-selector'); ?>
-                            </button>
-                            <button type="button" id="lps-test-page-rules" class="button button-primary">
-                                <?php _e('Test URL', 'loop-product-selector'); ?>
-                            </button>
-                        </div>
-                        <div id="lps-test-result"></div>
-                    </div>
                 </td>
             </tr>
 
